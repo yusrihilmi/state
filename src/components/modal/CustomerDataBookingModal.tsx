@@ -1,0 +1,820 @@
+import { useEffect, useState, useRef } from "react";
+import AddMenuModal from "./AddMenuModal";
+import { useTableNumberStore } from "../../stores/useTableNumberStore";
+import { useCustomerStore } from "../../stores/useCustomerStore";
+import { useBookingStore } from "../../stores/useBookingStore";
+
+
+
+const STATUS_LIST = [
+  { value: "waiting_list", label: "Waiting List" },
+  { value: "confirm", label: "Confirmed" },
+  { value: "seated", label: "Seated" },
+  { value: "completed", label: "Completed" },
+  { value: "cancelled", label: "Cancelled" },
+];
+
+
+export default function CustomerDataBookingModal({ open, data, onClose }: any) {
+  const [detail, setDetail] = useState<any>(null);
+  const [table, setTable] = useState("");
+  const [status, setStatus] = useState("");
+  const [bookingCode, setBookingCode] = useState("");
+  const [orderedMenu, setOrderedMenu] = useState<any[]>([]);
+  const [showAddMenu, setShowAddMenu] = useState(false);
+  const [isSelectMenu, setIsSelectMenu] = useState(false);
+  const [customerSearch, setCustomerSearch] = useState("");
+  const [showCustomerDropdown, setShowCustomerDropdown] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [dpFile, setDpFile] = useState<File | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+
+  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+  const [newCustomer, setNewCustomer] = useState({
+    fullname: "",
+    phone: "",
+    email: "",
+    instagram: "",
+  });
+  const [form, setForm] = useState({
+    date: "",
+    time: "",
+    totalPax: "",
+    expectedLeaveTime: "",
+    channel: "",
+    leaveTime: "",
+    spendMoney: "",
+    note: "",
+    downpaymentProof: "",
+  });
+
+
+  const {
+    items: customers,
+    current: customer,
+    // setFilters,
+    createCustomer,
+    fetchCustomerById,
+    // fetchCustomers,
+    clearCustomer,
+  } = useCustomerStore();
+
+  const { createBooking, updateBooking } = useBookingStore();
+
+
+  // useEffect(() => {
+  //   const t = setTimeout(() => {
+  //     if (!customerSearch) {
+  //       // 🔥 kalau kosong → fetch tanpa filter
+  //       setFilters({});
+  //       fetchCustomers(1, 10);
+  //       setShowCustomerDropdown(false);
+  //       return;
+  //     }
+
+  //     // 🔥 kalau ada isi → fetch pakai search
+  //     setFilters({ search: customerSearch });
+  //     fetchCustomers(1, 10);
+  //     setShowCustomerDropdown(true);
+  //   }, 400);
+
+  //   return () => clearTimeout(t);
+  // }, [customerSearch]);
+
+
+
+
+  const {
+    items: tables,
+    fetchTableNumbers,
+  } = useTableNumberStore();
+
+  useEffect(() => {
+    if (open) {
+      fetchTableNumbers(1, 100);
+    }
+  }, [open]);
+
+  useEffect(() => {
+    if (orderedMenu.length === 0) {
+      setIsSelectMenu(false);
+    }
+  }, [orderedMenu]);
+
+  useEffect(() => {
+    if (!open) {
+      setDetail(null);
+
+      setForm({
+        date: "",
+        time: "",
+        totalPax: "",
+        expectedLeaveTime: "",
+        channel: "",
+        leaveTime: "",
+        spendMoney: "",
+        note: "",
+        downpaymentProof: ""
+      });
+
+      setNewCustomer({
+        fullname: "",
+        phone: "",
+        email: "",
+        instagram: "",
+      });
+
+      setCustomerSearch("");
+      setStatus("");
+      setTable("");
+      setOrderedMenu([]);
+      setIsSelectMenu(false);
+      setBookingCode("")
+      setDpFile(null);
+      clearCustomer(); // 🔥 penting ini
+
+      return;
+    }
+
+
+    if (data) {
+      // DETAIL MODE
+      setDetail(data);
+      setTable(data.table?.id ?? "");
+      setStatus(data.status || "");
+      setBookingCode(data.bookingCode || "")
+
+      // 🔥 FETCH CUSTOMER DETAIL
+      if (data.customer?.id) {
+        fetchCustomerById(data.customer.id);
+      }
+
+      const menus = data?.bookingMenus || [];
+
+      const mappedMenus = menus.map((bm: any) => ({
+        id: bm.menu.id,
+        name: bm.menu.name,
+        price: bm.menu.price,
+        photo: bm.menu.photo,
+        description: bm.menu.description,
+        qty: bm.qty, // 🔥 pakai qty dari API
+      }));
+
+      setForm({
+        date: data.date || "",
+        time: data.time || "",
+        totalPax: data.totalPax || "",
+        expectedLeaveTime: data.expectedLeaveTime || "",
+        channel: data.channel || "",
+        leaveTime: data.leaveTime || "",
+        spendMoney: data.spendMoney || "",
+        note: data.note || "",
+        downpaymentProof: data.downpaymentProof || "",
+      });
+
+
+      setOrderedMenu(mappedMenus);
+      setIsSelectMenu(mappedMenus.length > 0);
+      setOrderedMenu(mappedMenus);
+
+    } else {
+      // ADD NEW MODE
+      setDetail(null);
+      setForm({
+        date: "",
+        time: "",
+        totalPax: "",
+        expectedLeaveTime: "",
+        channel: "",
+        leaveTime: "",
+        spendMoney: "",
+        note: "",
+        downpaymentProof: "",
+      });
+
+
+      setNewCustomer({
+        fullname: "",
+        phone: "",
+        email: "",
+        instagram: "",
+      });
+
+      setTable("");
+      setStatus("");
+      setOrderedMenu([]);
+      setIsSelectMenu(false);
+    }
+  }, [open, data]);
+
+  if (!open) return null;
+
+  const hasMenu = isSelectMenu;
+
+  const changeOrderedQty = (id: number, delta: number) => {
+    setOrderedMenu((prev) =>
+      prev.map((m) =>
+        m.id === id ? { ...m, qty: Math.max(1, m.qty + delta) } : m
+      )
+    );
+  };
+
+  const removeOrderedMenu = (id: number) => {
+    setOrderedMenu((prev) => prev.filter((m) => m.id !== id));
+  };
+
+  const generateTimeOptions = () => {
+    const times: string[] = [];
+
+    try {
+      const layoutStr = localStorage.getItem("layout");
+      if (!layoutStr) return times;
+
+      const layout = JSON.parse(layoutStr);
+      const openHours = layout.openHours || "00:00";
+      const closedHours = layout.closedHours || "23:45";
+
+      const parseTime = (timeStr: string) => {
+        const [hours, minutes] = timeStr.split(":").map(Number);
+        return hours * 60 + minutes;
+      };
+
+      const startMinutes = parseTime(openHours);
+      const endMinutes = parseTime(closedHours);
+
+      for (let mins = startMinutes; mins <= endMinutes; mins += 15) {
+        const hour = Math.floor(mins / 60);
+        const minute = mins % 60;
+
+        times.push(
+          `${hour.toString().padStart(2, "0")}:${minute
+            .toString()
+            .padStart(2, "0")}`
+        );
+      }
+    } catch (err) {
+      console.error("Failed to generate time options:", err);
+    }
+
+    return times;
+  };
+
+  const timeOptions = generateTimeOptions();
+
+
+  const handleSave = async () => {
+    try {
+      setLoading(true);
+
+      let customerId: number | undefined = customer?.id;
+
+      if (!customerId) {
+        if (!newCustomer.fullname || !newCustomer.phone) {
+          alert("Customer name & phone required");
+          setLoading(false);
+          return;
+        }
+
+        const createdCustomer = await createCustomer({
+          fullname: newCustomer.fullname,
+          phone: newCustomer.phone,
+          email: newCustomer.email || "",
+          instagram: newCustomer.instagram || "",
+        });
+
+        customerId = createdCustomer.id;
+      }
+
+      if (!customerId) {
+        throw new Error("Customer ID not found");
+      }
+
+
+
+      // ===============================
+      // 🔥 AUTO STATUS LOGIC
+      // ===============================
+      const totalPax = Number(form.totalPax || 0);
+      // ===============================
+      // 🔥 BUILD FORM DATA
+      // ===============================
+      const formData = new FormData();
+      formData.append("tableId", table);
+      formData.append("totalPax", totalPax.toString());
+      formData.append("time", form.time);
+      formData.append("spendMoney", form.spendMoney);
+      formData.append("date", form.date);
+      formData.append("note", form.note || "");
+
+      formData.append("status", status);
+      formData.append("customerId", customerId.toString());
+
+      if (dpFile) {
+        formData.append("downpaymentProof", dpFile);
+      }
+
+      if (orderedMenu.length > 0) {
+        const menus = orderedMenu.map((m) => ({
+          menuId: m.id,
+          qty: m.qty,
+        }));
+
+        formData.append("menus", JSON.stringify(menus));
+      }
+
+      // ===============================
+      // 🔥 CREATE OR UPDATE MODE
+      // ===============================
+      if (detail?.id) {
+        await updateBooking(detail.id, formData);
+      } else {
+        await createBooking(formData);
+      }
+
+      onClose();
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const canEditTime =
+    status === "waiting_list" || status === "confirm";
+
+
+
+
+  return (
+    <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50">
+      <div className="bg-[#f2f2f2] w-[1100px] rounded-xl p-6 flex flex-col">
+
+        <div className="flex gap-6">
+
+          {/* LEFT */}
+          <div className="flex-1">
+            <h3 className="font-semibold text-lg mb-4">Booking Details</h3>
+            <h3 className="font-semibold text-lg mb-4">{bookingCode}</h3>
+
+            {/* <p className="font-medium mb-2 text-sm">Customer Information</p> */}
+
+            <div className="w-full flex gap-4">
+              <div className="w-2/3">
+
+                <div className="grid grid-cols-2 gap-4 text-sm mb-4">
+                  <div className="hidden flex-col ">
+                    <div className="flex flex-col relative">
+                      <label>Name</label>
+
+                      <input
+                        className="input"
+                        value={customerSearch || customer?.fullname || newCustomer.fullname}
+                        onChange={(e) => {
+                          const value = e.target.value;
+
+                          clearCustomer();
+                          setCustomerSearch(value);
+
+                          setNewCustomer((prev) => ({
+                            ...prev,
+                            fullname: value,
+                          }));
+                        }}
+                      />
+
+
+
+
+
+
+                      {showCustomerDropdown &&
+                        customerSearch &&
+                        customers?.length > 0 && (
+                          <div className="absolute top-full mt-1 w-full bg-white border rounded-md shadow z-50 max-h-40 overflow-y-auto">
+                            {customers.map((c) => (
+                              <button
+                                key={c.id}
+                                type="button"
+                                onClick={() => {
+                                  fetchCustomerById(c.id);
+                                  setCustomerSearch(c.fullname);
+                                  setShowCustomerDropdown(false);
+                                }}
+                                className="w-full text-left px-3 py-2 text-sm hover:bg-gray-100"
+                              >
+                                <p className="font-medium">{c.fullname}</p>
+                                <p className="text-xs text-gray-500">{c.phone}</p>
+                              </button>
+                            ))}
+                          </div>
+                        )}
+
+
+                    </div>
+
+                  </div>
+                  <div className="hidden flex-col">
+                    <label htmlFor="">Phone</label>
+                    <input
+                      className={`input ${customer?.phone ? "!bg-gray-200 text-gray-500" : ""}`}
+                      value={customer?.phone || newCustomer.phone}
+                      onChange={(e) =>
+                        setNewCustomer((prev) => ({
+                          ...prev,
+                          phone: e.target.value,
+                        }))
+                      }
+                    />
+
+                  </div>
+                  <div className="hidden flex-col">
+                    <label htmlFor="">Email</label>
+                    <input
+                      className={`input ${customer?.email ? "!bg-gray-200 text-gray-500" : ""}`}
+                      value={customer?.email || newCustomer.email}
+                      onChange={(e) =>
+                        setNewCustomer((prev) => ({
+                          ...prev,
+                          email: e.target.value,
+                        }))
+                      }
+                    />
+                  </div>
+                  <div className="hidden flex-col">
+                    <label htmlFor="">Instagram</label>
+                    <input
+                      className={`input ${customer?.instagram ? "!bg-gray-200 text-gray-500" : ""}`}
+                      value={customer?.instagram || newCustomer.instagram}
+                      onChange={(e) =>
+                        setNewCustomer((prev) => ({
+                          ...prev,
+                          instagram: e.target.value,
+                        }))
+                      }
+                    />
+                  </div>
+                  <div className="flex flex-col">
+                    <label htmlFor="">Table</label>
+                    <select
+                      value={table}
+                      onChange={(e) => setTable(e.target.value)}
+                      className="input"
+                      disabled
+                    >
+                      <option value="">Select table</option>
+                      {tables.map((t) => (
+                        <option key={t.id} value={t.id}>
+                          {t.number} ({t.covers} Pax) - {t.category.name}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                  <div className="flex flex-col">
+                    <label htmlFor="">Date</label>
+                    <input
+                      type="date"
+                      disabled
+                      value={form.date}
+                      onChange={(e) =>
+                        setForm((prev) => ({ ...prev, date: e.target.value }))
+                      }
+                      className={`input ${!canEditTime ? "!bg-gray-100 cursor-not-allowed" : ""}`}
+                    />
+
+                  </div>
+
+                  <div className="flex flex-col">
+                    <label htmlFor="">Pax</label>
+                    <input
+                      disabled
+                      className="input"
+                      value={form.totalPax}
+                      onChange={(e) =>
+                        setForm((prev) => ({ ...prev, totalPax: e.target.value }))
+                      }
+                    />
+
+
+                    <label className="flex items-center gap-2 text-sm my-4">
+                      <input
+                        type="checkbox"
+                        checked={isSelectMenu}
+                        disabled
+                        onChange={(e) => {
+                          const checked = e.target.checked;
+                          setIsSelectMenu(checked);
+
+                          if (!checked) {
+                            // kalau dimatiin → buang semua menu
+                            setOrderedMenu([]);
+                          }
+                        }}
+                      />
+                      Is Select Menu?
+                    </label>
+
+                  <div className="flex flex-col mb-4">
+                    <label htmlFor="">Channel</label>
+                    <input
+                      value={form.channel}
+                      className="input !bg-gray-200" readOnly
+                    />
+                  </div>
+
+                    <label htmlFor="">Spend Money Amount</label>
+                    <input
+                      className="input"
+                      value={form.spendMoney}
+                      onChange={(e) =>
+                        setForm((prev) => ({ ...prev, spendMoney: e.target.value }))
+                      }
+                    />
+                  </div>
+                  <div className="mb-4">
+                    <label className="font-medium">DP Receipt</label>
+
+                    <div className="flex flex-col gap-3">
+                      {/* IMAGE WRAPPER */}
+                      <div
+                        className="relative group cursor-pointer"
+                        onClick={() => {
+                          const imageUrl = previewUrl || form?.downpaymentProof;
+                          if (imageUrl) {
+                            window.open(imageUrl, "_blank");
+                          }
+                        }}
+                      >
+                        {previewUrl ? (
+                          <img
+                            src={previewUrl}
+                            alt="preview"
+                            className="w-full h-32 object-cover rounded border"
+                          />
+                        ) : form?.downpaymentProof ? (
+                          <img
+                            src={form.downpaymentProof}
+                            alt="receipt"
+                            className="w-full h-32 object-cover rounded border"
+                          />
+                        ) : (
+                          <div className="w-full h-32 flex items-center justify-center rounded border bg-gray-100 text-gray-400 text-sm">
+                            No Photo
+                          </div>
+                        )}
+
+                        {(previewUrl || form?.downpaymentProof) && (
+                          <div
+                            className="
+            absolute inset-0
+            bg-black/50
+            opacity-0
+            group-hover:opacity-100
+            transition
+            flex items-center justify-center
+            rounded
+          "
+                          >
+                            <span className="text-white text-sm font-medium">
+                              View Photo
+                            </span>
+                          </div>
+                        )}
+                      </div>
+
+                      {/* Upload Button */}
+                      {/* <button
+                        type="button"
+                        onClick={() => fileInputRef.current?.click()}
+                        className="px-3 py-1 text-sm text-white w-fit border self-end rounded bg-primary"
+                      >
+                        Upload
+                      </button> */}
+
+                      {/* Hidden Input */}
+                      <input
+                        ref={fileInputRef}
+                        type="file"
+                        accept="image/*"
+                        className="hidden"
+                        onChange={(e) => {
+                          if (e.target.files?.[0]) {
+                            const file = e.target.files[0];
+                            setDpFile(file);
+                            setPreviewUrl(URL.createObjectURL(file));
+                          }
+                        }}
+                      />
+                    </div>
+                  </div>
+
+
+
+                  {/* IS SELECT MENU */}
+                </div>
+
+              </div>
+              <div className="w-1/3">
+                <div className="grid grid-cols-1 gap-4 text-sm mb-4">
+                  <div className="flex flex-col ">
+                    <label htmlFor="">Note</label>
+                    <textarea
+                      disabled
+                      className="input min-h-[112px]"
+                      value={form.note}
+                      onChange={(e) =>
+                        setForm((prev) => ({ ...prev, note: e.target.value }))
+                      }
+                    />
+
+                  </div>
+                  <div className="flex flex-col">
+                    <label>Time</label>
+                    <select
+                      className={`input ${!canEditTime ? "!bg-gray-100 cursor-not-allowed" : ""}`}
+                      value={form.time}
+                      disabled
+                      onChange={(e) =>
+                        setForm((prev) => ({
+                          ...prev,
+                          time: e.target.value,
+                        }))
+                      }
+                    >
+                      <option value="">Select Time</option>
+                      {timeOptions.map((time) => (
+                        <option key={time} value={time}>
+                          {time}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+
+                  <div className="flex flex-col">
+                    <label htmlFor="">Expected Leave Time</label>
+                    <input
+                      value={form.expectedLeaveTime}
+                      className="input !bg-gray-200" readOnly
+                    />
+                  </div>
+                  <div className="flex flex-col">
+                    <label htmlFor="">Leave Time</label>
+                    <input
+                      value={form.leaveTime}
+                      className="input !bg-gray-200" readOnly
+                    />
+                  </div>
+                </div>
+
+              </div>
+
+            </div>
+          </div>
+
+          {/* RIGHT – ORDERED MENU */}
+          {hasMenu && (
+            <div className="w-[400px] bg-white rounded-xl p-4 flex flex-col">
+              <h4 className="font-medium mb-3">Ordered Menu</h4>
+
+              {/* LIST MENU */}
+              <div className="text-sm flex-1 overflow-y-auto space-y-2">
+                {orderedMenu.length === 0 ? (
+                  <p className="text-gray-400 text-center py-6">
+                    No ordered menu yet
+                  </p>
+                ) : (
+                  orderedMenu.map((item, i) => (
+                    <div
+                      key={i}
+                      className="border rounded-md border-primary px-3 py-2 flex justify-between items-center"
+                    >
+                      {/* NAME + CANCEL */}
+                      <div className="flex justify-between items-center">
+                        <span className="font-semibold">{item.name}</span>
+                      </div>
+
+                      <div className="flex items-center">
+
+                        <button
+                          onClick={() => removeOrderedMenu(item.id)}
+                          className="text-red-500 text-xs hidden items-center gap-1"
+                        >
+                          {/* <Trash2Icon className="h-3 w-3" /> */}
+                        </button>
+                        <div className="flex items-center justify-end gap-2">
+                          <button
+                            onClick={() => changeOrderedQty(item.id, -1)}
+                            className="px-2 py-0.5 hidden border rounded text-sm"
+                          >
+                            −
+                          </button>
+                          <span className="min-w-[20px] text-center">
+                            {item.qty}x
+                          </span>
+                          <button
+                            onClick={() => changeOrderedQty(item.id, 1)}
+                            className="px-2 py-0.5 hidden border rounded text-sm"
+                          >
+                            +
+                          </button>
+                        </div>
+                      </div>
+
+                      {/* QTY CONTROL */}
+                    </div>
+                  ))
+                )}
+              </div>
+
+              {/* ADD MENU – STICKY BOTTOM */}
+              {/* <div className="pt-3 mt-3 border-t bg-white sticky bottom-0">
+                <button
+                  onClick={() => setShowAddMenu(true)}
+                  className="w-full py-2 text-sm rounded-md bg-white text-primary border"
+                >
+                  + Add Menu
+                </button>
+              </div> */}
+            </div>
+          )}
+
+
+        </div>
+
+        <div className="flex items-end">
+
+
+          {/* STATUS */}
+          <div className="w-[45%]">
+            <label htmlFor="">Status</label>
+            <div className="grid grid-cols-3 gap-2 flex-wrap">
+              {STATUS_LIST.map((s) => (
+                <button
+                  key={s.value}
+                  disabled
+                  onClick={() => setStatus(s.value)}
+                  className={`px-4 py-1 rounded-md text-sm
+      ${status === s.value
+                      ? "bg-[#a38f63] text-white"
+                      : "bg-white border"
+                    }`}
+                >
+                  {s.label}
+                </button>
+              ))}
+
+            </div>
+          </div>
+
+          {/* CLOSE */}
+          <div className="w-[55%] flex justify-end gap-4">
+            <button
+              onClick={() => {  // 🔥 fetch tanpa search
+                onClose();                // tutup modal
+              }}
+              className="px-4 py-2 bg-white rounded shadow text-sm"
+            >
+              Close
+            </button>
+
+            <button
+              onClick={handleSave}
+              disabled={loading}
+              className={`px-4 py-2 rounded shadow hidden text-sm text-white
+    ${loading ? "bg-gray-400 cursor-not-allowed" : "bg-primary"}
+  `}
+            >
+              {loading ? "Saving..." : "Save"}
+            </button>
+
+          </div>
+
+        </div>
+      </div>
+
+      <AddMenuModal
+        open={showAddMenu}
+        initialSelected={orderedMenu}   // 🔥 kirim menu existing
+        onClose={() => setShowAddMenu(false)}
+        onSave={(newMenu: any[]) => {
+          setOrderedMenu(newMenu);
+          setIsSelectMenu(true);
+        }}
+      />
+
+
+
+
+      {/* INPUT STYLE */}
+      <style>{`
+        .input {
+          background: white;
+          padding: 8px 12px;
+          border-radius: 6px;
+          border: 1px solid #e5e7eb;
+          font-size: 14px;
+        }
+      `}</style>
+    </div>
+  );
+}

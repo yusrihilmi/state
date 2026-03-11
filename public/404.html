@@ -1,0 +1,13 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <title>SPA Redirect</title>
+    <script>
+      var repo = "/state";
+      var path = location.pathname.replace(repo, "");
+      location.replace(repo + "/?redirect=" + path);
+    </script>
+  </head>
+  <body></body>
+</html>
