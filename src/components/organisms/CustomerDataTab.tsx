@@ -8,26 +8,41 @@ import { getCustomerApi } from "../../api/customerApi";
 
 
 export default function CustomerDataTab() {
-const items = useCustomerStore((s) => s.items);
-const total = useCustomerStore((s) => s.total);
-const page = useCustomerStore((s) => s.page);
-const limit = useCustomerStore((s) => s.limit);
-const listLoading = useCustomerStore((s) => s.listLoading);
-const filters = useCustomerStore((s) => s.filters);
-const setFilters = useCustomerStore((s) => s.setFilters);
-const fetchCustomers = useCustomerStore((s) => s.fetchCustomers);
-const deleteCustomer = useCustomerStore((s) => s.deleteCustomer);
+  const items = useCustomerStore((s) => s.items);
+  const total = useCustomerStore((s) => s.total);
+  const page = useCustomerStore((s) => s.page);
+  const limit = useCustomerStore((s) => s.limit);
+  const listLoading = useCustomerStore((s) => s.listLoading);
+  const filters = useCustomerStore((s) => s.filters);
+  const setFilters = useCustomerStore((s) => s.setFilters);
+  const fetchCustomers = useCustomerStore((s) => s.fetchCustomers);
+  const deleteCustomer = useCustomerStore((s) => s.deleteCustomer);
 
   const [detailOpen, setDetailOpen] = useState(false);
   const [formOpen, setFormOpen] = useState(false);
   const [selected, setSelected] = useState<any>(null);
   const [deleteId, setDeleteId] = useState<number | null>(null);
+  const [role, setRole] = useState<number | null>(null);
+
+  useEffect(() => {
+    try {
+      const raw = localStorage.getItem("auth-storage");
+      if (!raw) return;
+
+      const parsed = JSON.parse(raw);
+      const userRole = parsed?.state?.user?.role;
+
+      setRole(userRole);
+    } catch (err) {
+      console.error("Failed to parse auth-storage", err);
+    }
+  }, []);
 
   const totalPages = Math.ceil(total / limit);
 
- useEffect(() => {
-  fetchCustomers(page, limit);
-}, [page, filters.search, filters.fromDate, filters.toDate]);
+  useEffect(() => {
+    fetchCustomers(page, limit);
+  }, [page, filters.search, filters.fromDate, filters.toDate]);
 
 
   const exportExcel = async () => {
@@ -84,6 +99,8 @@ const deleteCustomer = useCustomerStore((s) => s.deleteCustomer);
       alert("Failed to export Excel");
     }
   };
+  const allowedRoles = [1, 2, 6];
+  const canSave = role !== null && allowedRoles.includes(role);
 
   return (
     <div className="p-4">
@@ -137,15 +154,19 @@ const deleteCustomer = useCustomerStore((s) => s.deleteCustomer);
 
         {/* HEADER */}
         <div className="flex gap-2">
-          <button
-            onClick={() => {
-              setSelected(null);
-              setFormOpen(true);
-            }}
-            className="px-4 py-2 bg-primary text-white rounded-md text-sm"
-          >
-            + Add Customer
-          </button>
+
+
+          {canSave && (
+            <button
+              onClick={() => {
+                setSelected(null);
+                setFormOpen(true);
+              }}
+              className="px-4 py-2 bg-primary text-white rounded-md text-sm"
+            >
+              + Add Customer
+            </button>
+          )}
 
           <button
             onClick={exportExcel}
@@ -190,22 +211,32 @@ const deleteCustomer = useCustomerStore((s) => s.deleteCustomer);
                       Detail
                     </button>
 
-                    <button
-                      className="text-blue-600 text-sm"
-                      onClick={() => {
-                        setSelected(customer);
-                        setFormOpen(true);
-                      }}
-                    >
-                      Edit
-                    </button>
 
-                    <button
-                      className="text-red-600 text-sm"
-                      onClick={() => setDeleteId(customer.id)}
-                    >
-                      Delete
-                    </button>
+                    {canSave && (
+
+
+                      <button
+                        className="text-blue-600 text-sm"
+                        onClick={() => {
+                          setSelected(customer);
+                          setFormOpen(true);
+                        }}
+                      >
+                        Edit
+                      </button>
+                    )}
+                    {canSave && (
+
+
+
+                      <button
+                        className="text-red-600 text-sm"
+                        onClick={() => setDeleteId(customer.id)}
+                      >
+                        Delete
+                      </button>
+                    )}
+
                   </td>
                 </tr>
               ))}

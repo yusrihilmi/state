@@ -103,8 +103,10 @@ export default function RolesModal({ open, data, onClose }: any) {
             >
               <option value={1}>Super Admin</option>
               <option value={2}>Manager</option>
-              <option value={3}>Staff</option>
-              <option value={4}>Order Taker / Cashier</option>
+              <option value={3}>GRO (Guest Relation Officer)</option>
+              <option value={4}>Cashier</option>
+              <option value={5}>Accounting</option>
+              <option value={6}>Marketing</option>
             </select>
           </div>
         </div>

@@ -10,6 +10,7 @@ import CloseOutModal from "../components/modal/CloseOutModal";
 import NewsTodayModal from "../components/modal/NewsTodayModal";
 import { useBookingStore } from "../stores/useBookingStore";
 import { useCloseOutStore } from "../stores/useCloseOutStore";
+import { toast } from "react-toastify";
 
 export default function ReservationCalendar() {
   const {
@@ -35,6 +36,25 @@ export default function ReservationCalendar() {
 
   const [closeOutModalOpen, setCloseOutModalOpen] = useState(false);
   const [selectedCloseOut, setSelectedCloseOut] = useState<any>(null);
+    const [role, setRole] = useState<number | null>(null);
+
+    useEffect(() => {
+        try {
+            const raw = localStorage.getItem("auth-storage");
+            if (!raw) return;
+
+            const parsed = JSON.parse(raw);
+            const userRole = parsed?.state?.user?.role;
+
+            setRole(userRole);
+        } catch (err) {
+            console.error("Failed to parse auth-storage", err);
+        }
+    }, []);
+
+    
+  const allowedRoles = [1, 2, 3];
+  const canSave = role !== null && allowedRoles.includes(role);
 
   const { bookingCode } = useParams();
 
@@ -423,9 +443,16 @@ export default function ReservationCalendar() {
                   setModalOpen(true);
                 }}
                 onDropFromWaiting={(data) => {
-                  setSelectedData(data);
-                  setModalOpen(true);
-                }}
+  if (!canSave) {
+    toast.error("No permission");
+    return;
+  }
+
+  setSelectedData(data);
+  setModalOpen(true);
+}}
+
+  canSave={canSave}
               />
             </div>
           </div>

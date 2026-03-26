@@ -16,6 +16,21 @@ export default function SpecialRequestModal({ open, onClose }: Props) {
 
   const [form, setForm] = useState<any[]>([]);
   const [saving, setSaving] = useState(false);
+  const [role, setRole] = useState<number | null>(null);
+
+  useEffect(() => {
+    try {
+      const raw = localStorage.getItem("auth-storage");
+      if (!raw) return;
+
+      const parsed = JSON.parse(raw);
+      const userRole = parsed?.state?.user?.role;
+
+      setRole(userRole);
+    } catch (err) {
+      console.error("Failed to parse auth-storage", err);
+    }
+  }, []);
 
   /* ================= FETCH ================= */
   useEffect(() => {
@@ -69,6 +84,9 @@ export default function SpecialRequestModal({ open, onClose }: Props) {
     }
   };
 
+  const allowedRoles = [1, 2, 6];
+  const canSave = role !== null && allowedRoles.includes(role);
+
   return (
     <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50">
       <div className="bg-white w-[600px] rounded-xl p-6 max-h-[80vh] overflow-auto">
@@ -104,15 +122,16 @@ export default function SpecialRequestModal({ open, onClose }: Props) {
             Close
           </button>
 
-          <button
-            onClick={handleSave}
-            disabled={saving}
-            className={`px-4 py-2 text-white rounded ${
-              saving ? "bg-gray-400" : "bg-primary"
-            }`}
-          >
-            {saving ? "Saving..." : "Save"}
-          </button>
+          {canSave && (
+            <button
+              onClick={handleSave}
+              disabled={saving}
+              className={`px-4 py-2 text-white rounded ${saving ? "bg-gray-400" : "bg-primary"
+                }`}
+            >
+              {saving ? "Saving..." : "Save"}
+            </button>
+          )}
         </div>
 
         <style>{`

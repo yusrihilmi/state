@@ -27,8 +27,10 @@ export default function RolesTab() {
   const ROLE_LABEL: Record<number, string> = {
     1: "Super Admin",
     2: "Manager",
-    3: "Staff",
-    4: "Order Taker / Cashier",
+    3: "GRO (Guest Relation Officer)",
+    4: "Cashier",
+    5: "Accounting",
+    6: "Marketing",
   };
 
 

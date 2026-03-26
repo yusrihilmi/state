@@ -41,7 +41,15 @@ function PrivateRoute({
 
   // kalau ada allowedRoles → cek role
   if (allowedRoles && !allowedRoles.includes(user.role)) {
-    return <Navigate to="/state/admin/reservation-calendar" replace />;
+    if ([1, 2, 3, 6].includes(user.role)) {
+      return <Navigate to="/state/admin/reservation-calendar" replace />;
+    }
+
+    if ([4, 5].includes(user.role)) {
+      return <Navigate to="/state/admin/booking-management" replace />;
+    }
+
+    return <Navigate to="/state/admin" replace />;
   }
 
   return <>{children}</>;
@@ -110,7 +118,7 @@ export default function App() {
         <Route
           path="/state/admin/dashboard-summary"
           element={
-            <PrivateRoute allowedRoles={[1, 2]}>
+            <PrivateRoute allowedRoles={[1, 2, 6]}>
               <DashboardSummary />
             </PrivateRoute>
           }
@@ -118,7 +126,7 @@ export default function App() {
         <Route
           path="/state/admin/reservation-calendar"
           element={
-            <PrivateRoute allowedRoles={[1, 2, 3]}>
+            <PrivateRoute allowedRoles={[1, 2, 3, 6]}>
               <ReservationCalendar />
             </PrivateRoute>
           }
@@ -126,7 +134,7 @@ export default function App() {
         <Route
           path="/state/admin/reservation-calendar/:bookingCode"
           element={
-            <PrivateRoute allowedRoles={[1, 2, 3]}>
+            <PrivateRoute allowedRoles={[1, 2, 3, 6]}>
               <ReservationCalendar />
             </PrivateRoute>
           }
@@ -135,7 +143,7 @@ export default function App() {
         <Route
           path="/state/admin/booking-management"
           element={
-            <PrivateRoute allowedRoles={[1, 2, 3, 4]}>
+            <PrivateRoute allowedRoles={[1, 2, 3, 4, 5, 6]}>
               <BookingManagement />
             </PrivateRoute>
           }
@@ -143,7 +151,7 @@ export default function App() {
         <Route
           path="/state/admin/menu-management"
           element={
-            <PrivateRoute allowedRoles={[1, 2]}>
+            <PrivateRoute allowedRoles={[1, 2, 6]}>
               <MenuManagement />
             </PrivateRoute>
           }
@@ -151,7 +159,7 @@ export default function App() {
         <Route
           path="/state/admin/table-management"
           element={
-            <PrivateRoute allowedRoles={[1, 2]}>
+            <PrivateRoute allowedRoles={[1, 2, 6]}>
               <TableManagement />
             </PrivateRoute>
           }
@@ -159,7 +167,7 @@ export default function App() {
         <Route
           path="/state/admin/promotion"
           element={
-            <PrivateRoute allowedRoles={[1, 2]}>
+            <PrivateRoute allowedRoles={[1, 2, 3, 4, 6]}>
               <Promotion />
             </PrivateRoute>
           }
@@ -175,7 +183,7 @@ export default function App() {
         <Route
           path="/state/admin/customer-data"
           element={
-            <PrivateRoute allowedRoles={[1, 2]}>
+            <PrivateRoute allowedRoles={[1, 2, 5, 6]}>
               <CustomerData />
             </PrivateRoute>
           }

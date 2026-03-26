@@ -1,6 +1,8 @@
 import { useEffect, useState } from "react";
 import BookingManagementModal from "../modal/BookingManagementModal";
 import { useBookingStore } from "../../stores/useBookingStore";
+import NewsTodayModal from "../modal/NewsTodayModal";
+import CloseOutModal from "../modal/CloseOutModal";
 import * as XLSX from "xlsx";
 import { saveAs } from "file-saver";
 import { getBookingApi } from "../../api/bookingApi";
@@ -26,6 +28,25 @@ export default function BookingManagementTab() {
   const [modalOpen, setModalOpen] = useState(false);
   const [selected, setSelected] = useState<any>(null);
   const [search, setSearch] = useState("");
+
+  const [newsModalOpen, setNewsModalOpen] = useState(false);
+  const [closeOutModalOpen, setCloseOutModalOpen] = useState(false);
+  const [selectedCloseOut, setSelectedCloseOut] = useState<any>(null);
+  const [role, setRole] = useState<number | null>(null);
+
+  useEffect(() => {
+    try {
+      const raw = localStorage.getItem("auth-storage");
+      if (!raw) return;
+
+      const parsed = JSON.parse(raw);
+      const userRole = parsed?.state?.user?.role;
+
+      setRole(userRole);
+    } catch (err) {
+      console.error("Failed to parse auth-storage", err);
+    }
+  }, []);
 
   /* ================= FETCH ================= */
   useEffect(() => {
@@ -105,6 +126,14 @@ export default function BookingManagementTab() {
       alert("Failed to export Excel");
     }
   };
+
+
+  const allowedRoles = [1, 2, 3];
+  const allowedRolesClose = [5];
+  const allowedRolesNews = [4, 5];
+  const canSave = role !== null && allowedRoles.includes(role);
+  const canClose = role !== null && allowedRolesClose.includes(role);
+  const canNews = role !== null && allowedRolesNews.includes(role);
 
   return (
     <div className="p-4">
@@ -204,15 +233,19 @@ export default function BookingManagementTab() {
         </div>
 
         <div className="flex gap-2">
-          <button
-            onClick={() => {
-              setSelected(null);
-              setModalOpen(true);
-            }}
-            className="px-4 py-2 bg-primary text-white rounded-md text-sm"
-          >
-            Add New Booking
-          </button>
+
+
+          {canSave && (
+            <button
+              onClick={() => {
+                setSelected(null);
+                setModalOpen(true);
+              }}
+              className="px-4 py-2 bg-primary text-white rounded-md text-sm"
+            >
+              Add New Booking
+            </button>
+          )}
 
           <button
             onClick={exportExcel}
@@ -220,6 +253,33 @@ export default function BookingManagementTab() {
           >
             Export Excel
           </button>
+
+          {canNews && (
+
+
+            <button
+              onClick={() => setNewsModalOpen(true)}
+              className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600"
+            >
+              News Today
+            </button>
+          )}
+
+          {canClose && (
+
+
+            <button
+              
+                onClick={() => {
+                  setSelectedCloseOut(null);
+                  setCloseOutModalOpen(true);
+                }}
+              className="px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600"
+            >
+              Close Out
+            </button>
+          )}
+
         </div>
       </div>
 
@@ -321,6 +381,18 @@ export default function BookingManagementTab() {
         data={selected}
         onClose={() => setModalOpen(false)}
       />
+      <NewsTodayModal
+        open={newsModalOpen}
+        onClose={() => setNewsModalOpen(false)}
+      />
+      
+                <CloseOutModal
+                  open={closeOutModalOpen}
+                  data={selectedCloseOut}
+                  onClose={() => {
+                    setCloseOutModalOpen(false); // refresh calendar
+                  }}
+                />
     </div>
   );
 }

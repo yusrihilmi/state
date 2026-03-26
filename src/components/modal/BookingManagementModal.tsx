@@ -33,6 +33,12 @@ export default function BookingManagementModal({ open, data, onClose }: any) {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const dropdownRef = useRef<HTMLDivElement>(null);
   const [selectedTables, setSelectedTables] = useState<any[]>([]); // array of table objects
+  const [needDp, setNeedDp] = useState(false);
+  const [dpAmounts, setDpAmounts] = useState([
+    "", "", "", "", ""
+  ]);
+
+  const [isDpCompleted, setIsDpCompleted] = useState(false);
 
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [newCustomer, setNewCustomer] = useState({
@@ -55,6 +61,27 @@ export default function BookingManagementModal({ open, data, onClose }: any) {
     downpaymentProof: "",
   });
   const [selectedCategoryId, setSelectedCategoryId] = useState<number | null>(null);
+  const [role, setRole] = useState<number | null>(null);
+
+  useEffect(() => {
+    try {
+      const raw = localStorage.getItem("auth-storage");
+      if (!raw) return;
+
+      const parsed = JSON.parse(raw);
+      const userRole = parsed?.state?.user?.role;
+
+      setRole(userRole);
+    } catch (err) {
+      console.error("Failed to parse auth-storage", err);
+    }
+  }, []);
+
+
+  const allowedRolesDp = [1, 4];
+  const canSaveDp = role !== null && allowedRolesDp.includes(role);
+  const allowedRoles = [1, 2, 3];
+  const canSave = role !== null && allowedRoles.includes(role);
 
 
   const {
@@ -231,6 +258,7 @@ export default function BookingManagementModal({ open, data, onClose }: any) {
       setStatus(data.status || "");
       setBookingCode(data.bookingCode || "")
       setSelectedCategoryId(data.category?.id || null);
+      setNeedDp(!!data.needDp);
       console.log("selectedCategoryId", selectedCategoryId);
       console.log("availableCategories", availableCategories);
 
@@ -299,6 +327,7 @@ export default function BookingManagementModal({ open, data, onClose }: any) {
       setStatus("");
       setOrderedMenu([]);
       setIsSelectMenu(false);
+      setNeedDp(false);
     }
   }, [open, data]);
 
@@ -357,7 +386,11 @@ export default function BookingManagementModal({ open, data, onClose }: any) {
   const timeOptions = generateTimeOptions();
 
 
-
+  const handleDpAmountChange = (index: number, value: string) => {
+    setDpAmounts((prev) =>
+      prev.map((item, i) => (i === index ? value : item))
+    );
+  };
 
   const handleSave = async () => {
     try {
@@ -413,9 +446,18 @@ export default function BookingManagementModal({ open, data, onClose }: any) {
       formData.append("spendMoney", form.spendMoney);
       formData.append("date", form.date);
       formData.append("note", form.note || "");
-
+      formData.append("needDp", needDp ? "true" : "false");
       formData.append("status", status);
       formData.append("customerId", customerId.toString());
+      formData.append("isDpCompleted", isDpCompleted ? "true" : "false");
+      const dpPayload = dpAmounts
+        .map((v, i) => ({
+          order: i + 1,
+          amount: Number(v) || 0,
+        }))
+        .filter((dp) => dp.amount > 0);
+
+      formData.append("dpAmounts", JSON.stringify(dpPayload));
 
       if (dpFile) {
         formData.append("downpaymentProof", dpFile);
@@ -467,369 +509,328 @@ export default function BookingManagementModal({ open, data, onClose }: any) {
     <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50">
       <div className="bg-[#f2f2f2] w-[1100px] rounded-xl p-6 flex flex-col">
 
-        <div className="flex gap-6 overflow-y-auto max-h-[500px] pr-4">
+        <div className="flex gap-6 overflow-y-auto max-h-[500px] flex-col pr-4">
 
-          {/* LEFT */}
-          <div className="flex-1">
-            <div className="flex justify-between mb-4">
-              <div>
-                <h3 className="font-semibold text-lg mb-4">Booking Details</h3>
-                <h3 className="font-semibold text-lg mb-4">{bookingCode}</h3>
+          <div className="flex  gap-6">
+            {/* LEFT */}
+            <div className="flex-1">
+              <div className="flex justify-between mb-4">
+                <div>
+                  <h3 className="font-semibold text-lg mb-4">Booking Details</h3>
+                  <h3 className="font-semibold text-lg mb-4">{bookingCode}</h3>
 
-                <p className="font-medium mb-2 text-sm">Customer Information</p>
+                  <p className="font-medium mb-2 text-sm">Customer Information</p>
 
-              </div>
-
-
-              <div className="flex flex-col w-1/2 text-sm">
-                {data.needDp && (
-                  <label><b>This booking is DP required</b></label>
-                )}
-                <label>News Today</label>
-                <textarea
-                  disabled
-                  className="!bg-gray-200 mt-2 cursor-not-allowed min-h-[112px] max-h-[112px]"
-                  value={
-                    newsLoading
-                      ? "Loading news..."
-                      : newsToday?.newsToday || ""
-                  }
-                />
-
-              </div>
-
-            </div>
-
-            <div className="w-full flex gap-4">
-              <div className="w-2/3">
-
-                <div className="grid grid-cols-2 gap-4 text-sm mb-4">
-                  <div className="flex flex-col">
-                    <div className="flex flex-col relative">
-                      <label>Name</label>
-                      <div ref={dropdownRef} className="relative w-full">
-                        <input
-                          disabled={!canEditTime}
-                          className={`input w-full ${!canEditTime ? "!bg-gray-100 cursor-not-allowed" : ""}`}
-                          value={customerSearch || customer?.fullname || newCustomer.fullname}
-                          onChange={(e) => {
-                            const value = e.target.value;
-
-                            clearCustomer();
-                            setCustomerSearch(value);
-
-                            setNewCustomer((prev) => ({
-                              ...prev,
-                              fullname: value,
-                            }));
-                          }}
-                        />
-                        {/* DROPDOWN */}
-                        {showCustomerDropdown &&
-                          customerSearch &&
-                          customers?.length > 0 && (
-                            <div className="absolute top-full mt-1 w-full bg-white border rounded-md shadow z-50 max-h-40 overflow-y-auto">
-                              {customers.map((c) => (
-                                <button
-                                  key={c.id}
-                                  type="button"
-                                  onClick={() => {
-                                    fetchCustomerById(c.id);
-                                    setCustomerSearch(c.fullname);
-                                    setShowCustomerDropdown(false);
-                                  }}
-                                  className="w-full text-left px-3 py-2 text-sm hover:bg-gray-100"
-                                >
-                                  <p className="font-medium">{c.fullname}</p>
-                                  <p className="text-xs text-gray-500">{c.phone}</p>
-                                </button>
-                              ))}
-                            </div>
-                          )}
-                      </div>
+                </div>
 
 
-                    </div>
+                <div className="flex flex-col w-1/2 text-sm">
+                  {data.needDp && (
+                    <label><b>This booking is DP required</b></label>
+                  )}
+                  <label>News Today</label>
+                  <textarea
+                    disabled
+                    className="!bg-gray-200 mt-2 cursor-not-allowed min-h-[112px] max-h-[112px]"
+                    value={
+                      newsLoading
+                        ? "Loading news..."
+                        : newsToday?.newsToday || ""
+                    }
+                  />
 
-                  </div>
-                  <div className="flex flex-col">
-                    <label htmlFor="">Phone</label>
-                    <input
-                      disabled={!canEditTime}
-                      className={`input ${customer?.phone || !canEditTime ? "!bg-gray-200 text-gray-500" : ""}`}
-                      value={customer?.phone || newCustomer.phone}
-                      onChange={(e) =>
-                        setNewCustomer((prev) => ({
-                          ...prev,
-                          phone: e.target.value,
-                        }))
-                      }
-                    />
-
-                  </div>
-                  <div className="flex flex-col">
-                    <label htmlFor="">Email</label>
-                    <input
-                      disabled={!canEditTime}
-                      className={`input ${customer?.email || !canEditTime ? "!bg-gray-200 text-gray-500" : ""}`}
-                      value={customer?.email || newCustomer.email}
-                      onChange={(e) =>
-                        setNewCustomer((prev) => ({
-                          ...prev,
-                          email: e.target.value,
-                        }))
-                      }
-                    />
-                  </div>
-                  <div className="flex flex-col">
-                    <label htmlFor="">Instagram</label>
-                    <input
-                      disabled={!canEditTime}
-                      className={`input ${customer?.instagram || !canEditTime ? "!bg-gray-200 text-gray-500" : ""}`}
-                      value={customer?.instagram || newCustomer.instagram}
-                      onChange={(e) =>
-                        setNewCustomer((prev) => ({
-                          ...prev,
-                          instagram: e.target.value,
-                        }))
-                      }
-                    />
-                  </div>
-                  <div className="flex flex-col">
-                    <label htmlFor="">Date</label>
-                    <input
-                      type="date"
-                      disabled={!canEditTime}
-                      value={form.date}
-                      onChange={(e) => {
-                        const newDate = e.target.value;
-
-                        setForm((prev) => ({
-                          ...prev,
-                          date: newDate,
-                          time: "", // 🔥 reset time kalau ganti tanggal
-                        }));
-                      }}
-                      className={`input ${!canEditTime ? "!bg-gray-100 cursor-not-allowed" : ""}`}
-                    />
-
-                  </div>
-                  <div className="flex flex-col">
-                    <label>Time</label>
-                    <select
-                      className={`input ${!canEditTime ? "!bg-gray-100 cursor-not-allowed" : ""}`}
-                      value={form.time}
-                      disabled={!canEditTime}
-                      onChange={(e) =>
-                        setForm((prev) => ({
-                          ...prev,
-                          time: e.target.value,
-                        }))
-                      }
-                    >
-                      <option value="">Select Time</option>
-
-                      {reservationLoading && (
-                        <option disabled>Loading...</option>
-                      )}
-
-                      {!reservationLoading &&
-                        availableTimeSlots.map((time) => (
-                          <option key={time} value={time}>
-                            {time}
-                          </option>
-                        ))}
-                    </select>
-                  </div>
-                  <div className="flex flex-col">
-                    <label>Category Table</label>
-
-                    <Select
-                      options={availableCategories.map(c => ({
-                        value: c.id,
-                        label: c.name,
-                      }))}
-                      value={
-                        availableCategories
-                          .map(c => ({ value: c.id, label: c.name }))
-                          .find(option => option.value === selectedCategoryId) || null
-                      }
-                      onChange={(selected: any) => {
-                        setSelectedCategoryId(selected?.value || null);
-                      }}
-                      isDisabled={!canEditTime || !form.date || !form.time}
-                      placeholder="Select category..."
-                    />
-                  </div>
-                  <div className="flex flex-col">
-                    <label>Table</label>
-
-                    <Select
-                      isMulti
-                      options={availableTables.map(t => ({
-                        value: t.id,
-                        label: `${t.number} (${t.covers} Pax)`,
-                      }))}
-                      value={selectedTables.map(t => ({
-                        value: t.id,
-                        label: `${t.number} (${t.covers} Pax)`,
-                      }))}
-                      onChange={(selected: any) => {
-                        const tables = selected.map((s: any) =>
-                          availableTables.find(t => t.id === s.value)
-                        );
-                        setSelectedTables(tables.filter(Boolean));
-                      }}
-                      isDisabled={!canEditTime || !selectedCategoryId}
-                      placeholder="Select table..."
-                    />
-                  </div>
-
-                  <div className="flex flex-col">
-                    <label htmlFor="">Pax</label>
-                    <input
-                      className={`input ${!canEditTime ? "!bg-gray-100 cursor-not-allowed" : ""}`}
-                      disabled={!canEditTime}
-                      value={form.totalPax}
-                      onChange={(e) =>
-                        setForm((prev) => ({ ...prev, totalPax: e.target.value }))
-                      }
-                    />
-
-
-                    <label className="flex items-center gap-2 text-sm my-4">
-                      <input
-                        type="checkbox"
-                        checked={isSelectMenu}
-                        onChange={(e) => {
-                          const checked = e.target.checked;
-                          setIsSelectMenu(checked);
-
-                          if (!checked) {
-                            // kalau dimatiin → buang semua menu
-                            setOrderedMenu([]);
-                          }
-                        }}
-                      />
-                      Is Select Menu?
-                    </label>
-
-                    {canMoney && (
-                      <>
-                        <label htmlFor="">Spend Money Amount</label>
-                        <input
-                          className="input"
-                          value={form.spendMoney}
-                          onChange={(e) =>
-                            setForm((prev) => ({
-                              ...prev,
-                              spendMoney: e.target.value,
-                            }))
-                          }
-                        />
-                      </>
-                    )}
-
-                  </div>
-                  <div className="mb-4">
-                    <label className="font-medium">DP Receipt</label>
-
-                    <div className="flex flex-col gap-3">
-                      {/* IMAGE WRAPPER */}
-                      <div
-                        className="relative group cursor-pointer"
-                        onClick={() => {
-                          const imageUrl = previewUrl || form?.downpaymentProof;
-                          if (imageUrl) {
-                            window.open(imageUrl, "_blank");
-                          }
-                        }}
-                      >
-                        {previewUrl ? (
-                          <img
-                            src={previewUrl}
-                            alt="preview"
-                            className="w-full h-32 object-cover rounded border"
-                          />
-                        ) : form?.downpaymentProof ? (
-                          <img
-                            src={form.downpaymentProof}
-                            alt="receipt"
-                            className="w-full h-32 object-cover rounded border"
-                          />
-                        ) : (
-                          <div className="w-full h-32 flex items-center justify-center rounded border bg-gray-100 text-gray-400 text-sm">
-                            No Photo
-                          </div>
-                        )}
-
-                        {(previewUrl || form?.downpaymentProof) && (
-                          <div
-                            className="
-              absolute inset-0
-              bg-black/50
-              opacity-0
-              group-hover:opacity-100
-              transition
-              flex items-center justify-center
-              rounded
-            "
-                          >
-                            <span className="text-white text-sm font-medium">
-                              View Photo
-                            </span>
-                          </div>
-                        )}
-                      </div>
-
-                      {/* Upload Button */}
-                      <button
-                        type="button"
-                        onClick={() => fileInputRef.current?.click()}
-                        className="px-3 py-1 text-sm text-white w-fit border self-end rounded bg-primary"
-                      >
-                        Upload
-                      </button>
-
-                      {/* Hidden Input */}
-                      <input
-                        ref={fileInputRef}
-                        type="file"
-                        accept="image/*"
-                        className="hidden"
-                        onChange={(e) => {
-                          if (e.target.files?.[0]) {
-                            const file = e.target.files[0];
-                            setDpFile(file);
-                            setPreviewUrl(URL.createObjectURL(file));
-                          }
-                        }}
-                      />
-                    </div>
-                  </div>
-
-
-
-                  {/* IS SELECT MENU */}
                 </div>
 
               </div>
-              <div className="w-1/3">
-                <div className="grid grid-cols-1 gap-4 text-sm mb-4">
-                  <div className="flex flex-col ">
-                    <label htmlFor="">Note</label>
-                    <textarea
-                      disabled={!canEditTime}
-                      className={`input min-h-[112px] ${!canEditTime ? "!bg-gray-100 cursor-not-allowed" : ""}`}
 
-                      value={form.note}
-                      onChange={(e) =>
-                        setForm((prev) => ({ ...prev, note: e.target.value }))
-                      }
-                    />
+              <div className="w-full flex gap-4">
+                <div className="w-2/3">
 
+                  <div className="grid grid-cols-2 gap-4 text-sm mb-4">
+                    <div className="flex flex-col">
+                      <div className="flex flex-col relative">
+                        <label>Name</label>
+                        <div ref={dropdownRef} className="relative w-full">
+                          <input
+                            disabled={!canEditTime}
+                            className={`input w-full ${!canEditTime ? "!bg-gray-100 cursor-not-allowed" : ""}`}
+                            value={customerSearch || customer?.fullname || newCustomer.fullname}
+                            onChange={(e) => {
+                              const value = e.target.value;
+
+                              clearCustomer();
+                              setCustomerSearch(value);
+
+                              setNewCustomer((prev) => ({
+                                ...prev,
+                                fullname: value,
+                              }));
+                            }}
+                          />
+                          {/* DROPDOWN */}
+                          {showCustomerDropdown &&
+                            customerSearch &&
+                            customers?.length > 0 && (
+                              <div className="absolute top-full mt-1 w-full bg-white border rounded-md shadow z-50 max-h-40 overflow-y-auto">
+                                {customers.map((c) => (
+                                  <button
+                                    key={c.id}
+                                    type="button"
+                                    onClick={() => {
+                                      fetchCustomerById(c.id);
+                                      setCustomerSearch(c.fullname);
+                                      setShowCustomerDropdown(false);
+                                    }}
+                                    className="w-full text-left px-3 py-2 text-sm hover:bg-gray-100"
+                                  >
+                                    <p className="font-medium">{c.fullname}</p>
+                                    <p className="text-xs text-gray-500">{c.phone}</p>
+                                  </button>
+                                ))}
+                              </div>
+                            )}
+                        </div>
+
+
+                      </div>
+
+                    </div>
+                    <div className="flex flex-col">
+                      <label htmlFor="">Phone</label>
+                      <input
+                        disabled={!canEditTime}
+                        className={`input ${customer?.phone || !canEditTime ? "!bg-gray-200 text-gray-500" : ""}`}
+                        value={customer?.phone || newCustomer.phone}
+                        onChange={(e) =>
+                          setNewCustomer((prev) => ({
+                            ...prev,
+                            phone: e.target.value,
+                          }))
+                        }
+                      />
+
+                    </div>
+                    <div className="flex flex-col">
+                      <label htmlFor="">Email</label>
+                      <input
+                        disabled={!canEditTime}
+                        className={`input ${customer?.email || !canEditTime ? "!bg-gray-200 text-gray-500" : ""}`}
+                        value={customer?.email || newCustomer.email}
+                        onChange={(e) =>
+                          setNewCustomer((prev) => ({
+                            ...prev,
+                            email: e.target.value,
+                          }))
+                        }
+                      />
+                    </div>
+                    <div className="flex flex-col">
+                      <label htmlFor="">Instagram</label>
+                      <input
+                        disabled={!canEditTime}
+                        className={`input ${customer?.instagram || !canEditTime ? "!bg-gray-200 text-gray-500" : ""}`}
+                        value={customer?.instagram || newCustomer.instagram}
+                        onChange={(e) =>
+                          setNewCustomer((prev) => ({
+                            ...prev,
+                            instagram: e.target.value,
+                          }))
+                        }
+                      />
+                    </div>
+                    <div className="flex flex-col">
+                      <label htmlFor="">Date</label>
+                      <input
+                        type="date"
+                        disabled={!canEditTime}
+                        value={form.date}
+                        onChange={(e) => {
+                          const newDate = e.target.value;
+
+                          setForm((prev) => ({
+                            ...prev,
+                            date: newDate,
+                            time: "", // 🔥 reset time kalau ganti tanggal
+                          }));
+                        }}
+                        className={`input ${!canEditTime ? "!bg-gray-100 cursor-not-allowed" : ""}`}
+                      />
+
+                    </div>
+                    <div className="flex flex-col">
+                      <label>Time</label>
+                      <select
+                        className={`input ${!canEditTime ? "!bg-gray-100 cursor-not-allowed" : ""}`}
+                        value={form.time}
+                        disabled={!canEditTime}
+                        onChange={(e) =>
+                          setForm((prev) => ({
+                            ...prev,
+                            time: e.target.value,
+                          }))
+                        }
+                      >
+                        <option value="">Select Time</option>
+
+                        {reservationLoading && (
+                          <option disabled>Loading...</option>
+                        )}
+
+                        {!reservationLoading &&
+                          availableTimeSlots.map((time) => (
+                            <option key={time} value={time}>
+                              {time}
+                            </option>
+                          ))}
+                      </select>
+                    </div>
+                    <div className="flex flex-col">
+                      <label>Category Table</label>
+
+                      <Select
+                        options={availableCategories.map(c => ({
+                          value: c.id,
+                          label: c.name,
+                        }))}
+                        value={
+                          availableCategories
+                            .map(c => ({ value: c.id, label: c.name }))
+                            .find(option => option.value === selectedCategoryId) || null
+                        }
+                        onChange={(selected: any) => {
+                          setSelectedCategoryId(selected?.value || null);
+                        }}
+                        isDisabled={!canEditTime || !form.date || !form.time}
+                        placeholder="Select category..."
+                      />
+                    </div>
+                    <div className="flex flex-col">
+                      <label>Table</label>
+
+                      <Select
+                        isMulti
+                        options={availableTables.map(t => ({
+                          value: t.id,
+                          label: `${t.number} (${t.covers} Pax)`,
+                        }))}
+                        value={selectedTables.map(t => ({
+                          value: t.id,
+                          label: `${t.number} (${t.covers} Pax)`,
+                        }))}
+                        onChange={(selected: any) => {
+                          const tables = selected.map((s: any) =>
+                            availableTables.find(t => t.id === s.value)
+                          );
+                          setSelectedTables(tables.filter(Boolean));
+                        }}
+                        isDisabled={!canEditTime || !selectedCategoryId}
+                        placeholder="Select table..."
+                      />
+                    </div>
+
+                    <div className="flex flex-col">
+                      <label htmlFor="">Pax</label>
+                      <input
+                        className={`input ${!canEditTime ? "!bg-gray-100 cursor-not-allowed" : ""}`}
+                        disabled={!canEditTime}
+                        value={form.totalPax}
+                        onChange={(e) =>
+                          setForm((prev) => ({ ...prev, totalPax: e.target.value }))
+                        }
+                      />
+
+
+                      <label className="flex items-center gap-2 text-sm my-4">
+                        <input
+                          type="checkbox"
+                          checked={isSelectMenu}
+                          onChange={(e) => {
+                            const checked = e.target.checked;
+                            setIsSelectMenu(checked);
+
+                            if (!checked) {
+                              // kalau dimatiin → buang semua menu
+                              setOrderedMenu([]);
+                            }
+                          }}
+                        />
+                        Is Select Menu?
+                      </label>
+
+
+                      <label className="flex items-center gap-2 text-sm">
+                        <input
+                          type="checkbox"
+                          checked={needDp}
+                          onChange={(e) => setNeedDp(e.target.checked)}
+                        />
+                        Need DP?
+                      </label>
+
+
+                    </div>
+
+
+                    <div className="flex flex-col">
+                      <label htmlFor="">Channel</label>
+                      <select
+                        className={`input ${!canEditTime ? "!bg-gray-100 cursor-not-allowed" : ""}`}
+                        value={form.channel}
+                        disabled={!canEditTime}
+                        onChange={(e) =>
+                          setForm((prev) => ({
+                            ...prev,
+                            channel: e.target.value,
+                          }))
+                        }
+                      >
+                        <option value="">Select Channel</option>
+                        <option key="instagram" value="instagram">Instagram</option>
+                        <option key="whatsapp" value="whatsapp">WhatsApp</option>
+                      </select>
+
+
+                      {canMoney && (
+                        <>
+                          <label htmlFor="" className="mt-2">Spend Money Amount</label>
+                          <input
+                            className="input"
+                            value={form.spendMoney}
+                            onChange={(e) =>
+                              setForm((prev) => ({
+                                ...prev,
+                                spendMoney: e.target.value,
+                              }))
+                            }
+                          />
+                        </>
+                      )}
+                    </div>
+
+
+
+
+
+                    {/* IS SELECT MENU */}
                   </div>
-                  {/* <div className="flex flex-col">
+
+                </div>
+                <div className="w-1/3">
+                  <div className="grid grid-cols-1 gap-4 text-sm mb-4">
+                    <div className="flex flex-col ">
+                      <label htmlFor="">Note</label>
+                      <textarea
+                        disabled={!canEditTime}
+                        className={`input min-h-[112px] ${!canEditTime ? "!bg-gray-100 cursor-not-allowed" : ""}`}
+
+                        value={form.note}
+                        onChange={(e) =>
+                          setForm((prev) => ({ ...prev, note: e.target.value }))
+                        }
+                      />
+
+                    </div>
+                    {/* <div className="flex flex-col">
                     <label>Time</label>
                     <select
                       className={`input ${!canEditTime ? "!bg-gray-100 cursor-not-allowed" : ""}`}
@@ -856,159 +857,290 @@ export default function BookingManagementModal({ open, data, onClose }: any) {
                         ))}
                     </select>
                   </div> */}
-                  <div className="flex flex-col">
-                    <label htmlFor="">Expected Leave Time</label>
-                    <select
-                      className={`input ${!canEditTime ? "!bg-gray-100 cursor-not-allowed" : ""}`}
-                      value={form.expectedLeaveTime}
-                      disabled={!canEditTime}
-                      onChange={(e) =>
-                        setForm((prev) => ({
-                          ...prev,
-                          expectedLeaveTime: e.target.value,
-                        }))
-                      }
-                    >
-                      <option value="">Select Time</option>
-                      {timeOptions.map((expectedLeaveTime) => (
-                        <option key={expectedLeaveTime} value={expectedLeaveTime}>
-                          {expectedLeaveTime}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-                  <div className="flex flex-col">
-                    <label htmlFor="">Leave Time</label>
-                    <input
-                      type="time"
-                      className={`input ${!canEditTime ? "!bg-gray-100 cursor-not-allowed" : ""}`}
-                      disabled={!canEditTime}
-                      value={form.leaveTime}
-                      onChange={(e) =>
-                        setForm((prev) => ({
-                          ...prev,
-                          leaveTime: e.target.value,
-                        }))
-                      }
-                    />
+                    <div className="flex flex-col">
+                      <label htmlFor="">Expected Leave Time</label>
+                      <select
+                        className={`input ${!canEditTime ? "!bg-gray-100 cursor-not-allowed" : ""}`}
+                        value={form.expectedLeaveTime}
+                        disabled={!canEditTime}
+                        onChange={(e) =>
+                          setForm((prev) => ({
+                            ...prev,
+                            expectedLeaveTime: e.target.value,
+                          }))
+                        }
+                      >
+                        <option value="">Select Time</option>
+                        {timeOptions.map((expectedLeaveTime) => (
+                          <option key={expectedLeaveTime} value={expectedLeaveTime}>
+                            {expectedLeaveTime}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                    <div className="flex flex-col">
+                      <label htmlFor="">Leave Time</label>
+                      <input
+                        type="time"
+                        className={`input ${!canEditTime ? "!bg-gray-100 cursor-not-allowed" : ""}`}
+                        disabled={!canEditTime}
+                        value={form.leaveTime}
+                        onChange={(e) =>
+                          setForm((prev) => ({
+                            ...prev,
+                            leaveTime: e.target.value,
+                          }))
+                        }
+                      />
 
+                    </div>
+
+                    <div className="flex flex-col">
+                      <label htmlFor="">Reference Number</label>
+                      <input
+                        className={`input ${!canEditTime ? "!bg-gray-100 cursor-not-allowed" : ""}`}
+                        disabled={!canEditTime}
+                        value={form.referenceNumber}
+                        onChange={(e) =>
+                          setForm((prev) => ({ ...prev, referenceNumber: e.target.value }))
+                        }
+                      />
+                    </div>
                   </div>
-                  <div className="flex flex-col">
-                    <label htmlFor="">Channel</label>
-                    <select
-                      className={`input ${!canEditTime ? "!bg-gray-100 cursor-not-allowed" : ""}`}
-                      value={form.channel}
-                      disabled={!canEditTime}
-                      onChange={(e) =>
-                        setForm((prev) => ({
-                          ...prev,
-                          channel: e.target.value,
-                        }))
-                      }
-                    >
-                      <option value="">Select Channel</option>
-                      <option key="instagram" value="instagram">Instagram</option>
-                      <option key="whatsapp" value="whatsapp">WhatsApp</option>
-                    </select>
-                  </div>
-                  <div className="flex flex-col">
-                    <label htmlFor="">Reference Number</label>
-                    <input
-                      className={`input ${!canEditTime ? "!bg-gray-100 cursor-not-allowed" : ""}`}
-                      disabled={!canEditTime}
-                      value={form.referenceNumber}
-                      onChange={(e) =>
-                        setForm((prev) => ({ ...prev, referenceNumber: e.target.value }))
-                      }
-                    />
-                  </div>
-                  <div className="flex flex-col">
-                    <label htmlFor="">Total DP</label>
-                    <input
-                      className={`input !bg-gray-100 cursor-not-allowed`}
-                      disabled={!canEditTime}
-                      value={form.totalDp}
-                      onChange={(e) =>
-                        setForm((prev) => ({ ...prev, referenceNumber: e.target.value }))
-                      }
-                    />
-                  </div>
+
                 </div>
 
               </div>
 
+
             </div>
+
+            {/* RIGHT – ORDERED MENU */}
+            {hasMenu && (
+              <div className="w-[400px] bg-white rounded-xl p-4 flex flex-col">
+                <h4 className="font-medium mb-3">Ordered Menu</h4>
+
+                {/* LIST MENU */}
+                <div className="text-sm flex-1 overflow-y-auto space-y-2">
+                  {orderedMenu.length === 0 ? (
+                    <p className="text-gray-400 text-center py-6">
+                      No ordered menu yet
+                    </p>
+                  ) : (
+                    orderedMenu.map((item, i) => (
+                      <div
+                        key={i}
+                        className="border rounded-md border-primary px-3 py-2 flex justify-between items-center"
+                      >
+                        {/* NAME + CANCEL */}
+                        <div className="flex justify-between items-center">
+                          <span className="font-semibold">{item.name}</span>
+                        </div>
+
+                        <div className="flex items-center">
+
+                          <button
+                            onClick={() => removeOrderedMenu(item.id)}
+                            className="text-red-500 text-xs flex items-center gap-1"
+                          >
+                            <Trash2Icon className="h-3 w-3" />
+                          </button>
+                          <div className="flex items-center justify-end gap-2">
+                            <button
+                              onClick={() => changeOrderedQty(item.id, -1)}
+                              className="px-2 py-0.5 border rounded text-sm"
+                            >
+                              −
+                            </button>
+                            <span className="min-w-[20px] text-center">
+                              {item.qty}
+                            </span>
+                            <button
+                              onClick={() => changeOrderedQty(item.id, 1)}
+                              className="px-2 py-0.5 border rounded text-sm"
+                            >
+                              +
+                            </button>
+                          </div>
+                        </div>
+
+                        {/* QTY CONTROL */}
+                      </div>
+                    ))
+                  )}
+                </div>
+
+                {/* ADD MENU – STICKY BOTTOM */}
+                <div className="pt-3 mt-3 border-t bg-white sticky bottom-0">
+                  <button
+                    onClick={() => setShowAddMenu(true)}
+                    className="w-full py-2 text-sm rounded-md bg-white text-primary border"
+                  >
+                    + Add Menu
+                  </button>
+                </div>
+              </div>
+            )}
+
           </div>
 
-          {/* RIGHT – ORDERED MENU */}
-          {hasMenu && (
-            <div className="w-[400px] bg-white rounded-xl p-4 flex flex-col">
-              <h4 className="font-medium mb-3">Ordered Menu</h4>
+          {needDp && (
+            <div className="mt-4 border-t pt-4 space-y-4">
+              <label className="font-semibold block">Down Payment</label>
 
-              {/* LIST MENU */}
-              <div className="text-sm flex-1 overflow-y-auto space-y-2">
-                {orderedMenu.length === 0 ? (
-                  <p className="text-gray-400 text-center py-6">
-                    No ordered menu yet
-                  </p>
-                ) : (
-                  orderedMenu.map((item, i) => (
-                    <div
-                      key={i}
-                      className="border rounded-md border-primary px-3 py-2 flex justify-between items-center"
+
+
+
+
+              {/* TOTAL AUTO (optional tapi bagus 🔥) */}
+
+              <div className="flex flex-col mb-3">
+                <label>Total DP</label>
+
+                <input
+                  className={`input !bg-gray-100 cursor-not-allowed`}
+                  disabled={!canEditTime}
+                  value={form.totalDp}
+                  onChange={(e) =>
+                    setForm((prev) => ({ ...prev, referenceNumber: e.target.value }))
+                  }
+                />
+              </div>
+
+
+
+              {/* UPLOAD (CUMA 1) */}
+              <div className="grid grid-cols-2 gap-4">
+                <div className="flex flex-col gap-3">
+                  <label className="font-medium">DP Receipt</label>
+
+                  <div
+                    className="relative group cursor-pointer"
+                    onClick={() => {
+                      const imageUrl = previewUrl || form?.downpaymentProof;
+                      if (imageUrl) window.open(imageUrl, "_blank");
+                    }}
+                  >
+                    {previewUrl ? (
+                      <img
+                        src={previewUrl}
+                        className="w-full h-60 object-cover rounded border"
+                      />
+                    ) : form?.downpaymentProof ? (
+                      <img
+                        src={form.downpaymentProof}
+                        className="w-full h-60 object-cover rounded border"
+                      />
+                    ) : (
+                      <div className="w-full h-60 flex items-center justify-center rounded border bg-gray-100 text-gray-400 text-sm">
+                        No Photo
+                      </div>
+                    )}
+
+                    {(previewUrl || form?.downpaymentProof) && (
+                      <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 flex items-center justify-center rounded">
+                        <span className="text-white text-sm">View Photo</span>
+                      </div>
+                    )}
+                  </div>
+
+
+
+                  {canSaveDp && (
+
+                    <button
+                      type="button"
+                      onClick={() => fileInputRef.current?.click()}
+                      className="px-3 py-1 text-sm text-white w-fit border self-end rounded bg-primary"
                     >
-                      {/* NAME + CANCEL */}
-                      <div className="flex justify-between items-center">
-                        <span className="font-semibold">{item.name}</span>
-                      </div>
+                      Upload
+                    </button>
+                  )}
 
-                      <div className="flex items-center">
+                  <input
+                    ref={fileInputRef}
+                    type="file"
+                    accept="image/*"
+                    className="hidden"
+                    onChange={(e) => {
+                      if (e.target.files?.[0]) {
+                        const file = e.target.files[0];
+                        setDpFile(file);
+                        setPreviewUrl(URL.createObjectURL(file));
+                      }
+                    }}
+                  />
+                </div>
 
-                        <button
-                          onClick={() => removeOrderedMenu(item.id)}
-                          className="text-red-500 text-xs flex items-center gap-1"
-                        >
-                          <Trash2Icon className="h-3 w-3" />
-                        </button>
-                        <div className="flex items-center justify-end gap-2">
-                          <button
-                            onClick={() => changeOrderedQty(item.id, -1)}
-                            className="px-2 py-0.5 border rounded text-sm"
-                          >
-                            −
-                          </button>
-                          <span className="min-w-[20px] text-center">
-                            {item.qty}
-                          </span>
-                          <button
-                            onClick={() => changeOrderedQty(item.id, 1)}
-                            className="px-2 py-0.5 border rounded text-sm"
-                          >
-                            +
-                          </button>
-                        </div>
-                      </div>
-
-                      {/* QTY CONTROL */}
+                {/* 5 AMOUNT FIELD */}
+                <div className="grid grid-cols-1 gap-3">
+                  {dpAmounts.map((amount, index) => (
+                    <div key={index} className="flex flex-col">
+                      <label className="text-xs">DP {index + 1}</label>
+                      <input
+                        className={`
+          input
+          ${!canSaveDp ? "!bg-gray-100 cursor-not-allowed text-gray-500" : ""}
+        `}
+                        placeholder="Amount"
+                        value={amount}
+                        disabled={!canSaveDp}
+                        onChange={(e) => {
+                          if (!canSaveDp) return; // 🔥 extra safety
+                          handleDpAmountChange(index, e.target.value);
+                        }}
+                      />
                     </div>
-                  ))
-                )}
+                  ))}
+                </div>
               </div>
+              <label
+                className={`
+    flex items-center justify-between border rounded-lg px-3 py-2
+    ${canSaveDp ? "bg-white cursor-pointer" : "bg-gray-100 cursor-not-allowed opacity-60"}
+  `}
+              >
+                <span className="text-sm font-medium">
+                  DP Completed
+                </span>
 
-              {/* ADD MENU – STICKY BOTTOM */}
-              <div className="pt-3 mt-3 border-t bg-white sticky bottom-0">
-                <button
-                  onClick={() => setShowAddMenu(true)}
-                  className="w-full py-2 text-sm rounded-md bg-white text-primary border"
-                >
-                  + Add Menu
-                </button>
-              </div>
+                <div className="relative">
+                  <input
+                    type="checkbox"
+                    checked={isDpCompleted}
+                    disabled={!canSaveDp}
+                    onChange={(e) => {
+                      if (!canSaveDp) return; // 🔥 extra safety
+                      setIsDpCompleted(e.target.checked);
+                    }}
+                    className="sr-only peer"
+                  />
+
+                  {/* TRACK */}
+                  <div
+                    className={`
+        w-11 h-6 rounded-full transition
+        ${isDpCompleted ? "bg-green-500" : "bg-gray-300"}
+        ${!canSaveDp ? "bg-gray-300" : ""}
+      `}
+                  />
+
+                  {/* THUMB */}
+                  <div
+                    className={`
+        absolute top-0.5 left-0.5 
+        w-5 h-5 bg-white rounded-full shadow
+        transition
+        ${isDpCompleted ? "translate-x-5" : ""}
+      `}
+                  />
+                </div>
+              </label>
             </div>
           )}
 
-
         </div>
+
 
         <div className="flex items-end">
 
@@ -1055,16 +1187,18 @@ export default function BookingManagementModal({ open, data, onClose }: any) {
             >
               Close
             </button>
+            {canSave && (
 
-            <button
-              onClick={handleSave}
-              disabled={loading}
-              className={`px-4 py-2 rounded shadow text-sm text-white
+              <button
+                onClick={handleSave}
+                disabled={loading}
+                className={`px-4 py-2 rounded shadow text-sm text-white
       ${loading ? "bg-gray-400 cursor-not-allowed" : "bg-primary"}
     `}
-            >
-              {loading ? "Saving..." : "Save"}
-            </button>
+              >
+                {loading ? "Saving..." : "Save"}
+              </button>
+            )}
 
           </div>
 

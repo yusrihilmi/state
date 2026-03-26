@@ -21,6 +21,25 @@ export default function CloseOutModal({ open, data, onClose }: Props) {
     } = useCloseOutStore();
 
     const [editingId, setEditingId] = useState<number | null>(null);
+    const [role, setRole] = useState<number | null>(null);
+
+    useEffect(() => {
+        try {
+            const raw = localStorage.getItem("auth-storage");
+            if (!raw) return;
+
+            const parsed = JSON.parse(raw);
+            const userRole = parsed?.state?.user?.role;
+
+            setRole(userRole);
+        } catch (err) {
+            console.error("Failed to parse auth-storage", err);
+        }
+    }, []);
+
+
+    const allowedRoles = [1, 2];
+    const canSave = role !== null && allowedRoles.includes(role);
 
     const {
         items: categories,
@@ -201,17 +220,17 @@ export default function CloseOutModal({ open, data, onClose }: Props) {
     };
 
     const handleDeleteRow = async (id: number) => {
-  const confirmed = window.confirm("Are you sure you want to delete this close out?");
-  if (!confirmed) return;
+        const confirmed = window.confirm("Are you sure you want to delete this close out?");
+        if (!confirmed) return;
 
-  try {
-    await deleteCloseOut(id);
-    toast.success("Close out deleted");
-  } catch (err) {
-    toast.error("Failed to delete close out");
-    console.error(err);
-  }
-};
+        try {
+            await deleteCloseOut(id);
+            toast.success("Close out deleted");
+        } catch (err) {
+            toast.error("Failed to delete close out");
+            console.error(err);
+        }
+    };
 
     const handleDelete = async () => {
         if (!data?.id) return;
@@ -224,143 +243,142 @@ export default function CloseOutModal({ open, data, onClose }: Props) {
 
     return (
         <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50">
-            <div className="bg-white w-[700px] rounded-xl p-6">
-
-                <h2 className="text-lg font-semibold mb-6">
-                    {data ? "Edit Close Out" : "Create Close Out"}
-                </h2>
-
-                <div className="grid grid-cols-2 gap-4">
-
-                    <div className="flex flex-col">
-                        <label>Title</label>
-                        <input
-                            className="input"
-                            value={form.title}
-                            onChange={(e) =>
-                                setForm({ ...form, title: e.target.value })
-                            }
-                        />
-                    </div>
-
-                    <div className="flex flex-col">
-                        <label>Area</label>
-                        <Select
-                            isMulti
-                            options={categoryOptions}
-                            value={categoryOptions.filter(opt =>
-                                form.categoryIds.includes(opt.value)
-                            )}
-                            onChange={(selected) => {
-                                const ids = selected
-                                    ? selected.map((s) => Number(s.value))
-                                    : [];
-
-                                setForm({
-                                    ...form,
-                                    categoryIds: ids,
-                                });
-                            }}
-                            placeholder="Select area..."
-                            isLoading={!categories.length}
-                        />
-                    </div>
-
-                    <div className="flex flex-col">
-                        <label>From Date</label>
-                        <input
-                            type="date"
-                            className="input"
-                            value={form.fromDate}
-                            onChange={(e) =>
-                                setForm({ ...form, fromDate: e.target.value })
-                            }
-                        />
-                    </div>
-
-                    <div className="flex flex-col">
-                        <label>To Date</label>
-                        <input
-                            type="date"
-                            className="input"
-                            value={form.toDate}
-                            onChange={(e) =>
-                                setForm({ ...form, toDate: e.target.value })
-                            }
-                        />
-                    </div>
-
-                    <div className="flex flex-col">
-                        <label>From Time</label>
-                        <select
-                            className="input"
-                            value={form.fromTime}
-                            onChange={(e) =>
-                                setForm({ ...form, fromTime: e.target.value })
-                            }
-                        >
-                            <option value="">Select time</option>
-                            {timeOptions.map((time) => (
-                                <option key={time} value={time}>
-                                    {time}
-                                </option>
-                            ))}
-                        </select>
-                    </div>
-
-                    <div className="flex flex-col">
-                        <label>Until Time</label>
-                        <select
-                            className="input"
-                            value={form.untilTime}
-                            onChange={(e) =>
-                                setForm({ ...form, untilTime: e.target.value })
-                            }
-                        >
-                            <option value="">Select time</option>
-                            {timeOptions.map((time) => (
-                                <option key={time} value={time}>
-                                    {time}
-                                </option>
-                            ))}
-                        </select>
-                    </div>
-
-                    {/* TABLE SELECT */}
-                </div>
-
-                {/* BUTTONS */}
-                <div className="flex justify-between mt-8">
-
+            <div className="bg-white flex gap-8 rounded-xl p-6">
+                {canSave && (
                     <div>
-                        {data && (
-                            <button
-                                onClick={handleDelete}
-                                className="px-4 py-2 bg-red-500 text-white rounded"
-                            >
-                                Delete
-                            </button>
-                        )}
-                    </div>
+                        <h2 className="text-lg font-semibold mb-6">
+                            {data ? "Edit Close Out" : "Create Close Out"}
+                        </h2>
 
-                    <div className="flex gap-3">
-                        <button
-                            onClick={onClose}
-                            className="px-4 py-2 bg-gray-200 rounded"
-                        >
-                            Close
-                        </button>
+                        <div className="grid grid-cols-2 gap-4">
 
-                        <button
-                            onClick={handleSave}
-                            disabled={loading}
-                            className={`px-4 py-2 text-white rounded ${loading ? "bg-gray-400" : "bg-primary"
-                                }`}
-                        >
-                            {loading ? "Saving..." : "Save"}
-                        </button>
+                            <div className="flex flex-col">
+                                <label>Title</label>
+                                <input
+                                    className="input"
+                                    value={form.title}
+                                    onChange={(e) =>
+                                        setForm({ ...form, title: e.target.value })
+                                    }
+                                />
+                            </div>
+
+                            <div className="flex flex-col">
+                                <label>Area</label>
+                                <Select
+                                    isMulti
+                                    options={categoryOptions}
+                                    value={categoryOptions.filter(opt =>
+                                        form.categoryIds.includes(opt.value)
+                                    )}
+                                    onChange={(selected) => {
+                                        const ids = selected
+                                            ? selected.map((s) => Number(s.value))
+                                            : [];
+
+                                        setForm({
+                                            ...form,
+                                            categoryIds: ids,
+                                        });
+                                    }}
+                                    placeholder="Select area..."
+                                    isLoading={!categories.length}
+                                />
+                            </div>
+
+                            <div className="flex flex-col">
+                                <label>From Date</label>
+                                <input
+                                    type="date"
+                                    className="input"
+                                    value={form.fromDate}
+                                    onChange={(e) =>
+                                        setForm({ ...form, fromDate: e.target.value })
+                                    }
+                                />
+                            </div>
+
+                            <div className="flex flex-col">
+                                <label>To Date</label>
+                                <input
+                                    type="date"
+                                    className="input"
+                                    value={form.toDate}
+                                    onChange={(e) =>
+                                        setForm({ ...form, toDate: e.target.value })
+                                    }
+                                />
+                            </div>
+
+                            <div className="flex flex-col">
+                                <label>From Time</label>
+                                <select
+                                    className="input"
+                                    value={form.fromTime}
+                                    onChange={(e) =>
+                                        setForm({ ...form, fromTime: e.target.value })
+                                    }
+                                >
+                                    <option value="">Select time</option>
+                                    {timeOptions.map((time) => (
+                                        <option key={time} value={time}>
+                                            {time}
+                                        </option>
+                                    ))}
+                                </select>
+                            </div>
+
+                            <div className="flex flex-col">
+                                <label>Until Time</label>
+                                <select
+                                    className="input"
+                                    value={form.untilTime}
+                                    onChange={(e) =>
+                                        setForm({ ...form, untilTime: e.target.value })
+                                    }
+                                >
+                                    <option value="">Select time</option>
+                                    {timeOptions.map((time) => (
+                                        <option key={time} value={time}>
+                                            {time}
+                                        </option>
+                                    ))}
+                                </select>
+                            </div>
+
+                            {/* TABLE SELECT */}
+                        </div>
+
+                        <div className="flex justify-between mt-8">
+
+                            <div>
+                                {data && (
+                                    <button
+                                        onClick={handleDelete}
+                                        className="px-4 py-2 bg-red-500 text-white rounded"
+                                    >
+                                        Delete
+                                    </button>
+                                )}
+                            </div>
+
+                            <div className="flex gap-3">
+
+
+
+                                <button
+                                    onClick={handleSave}
+                                    disabled={loading}
+                                    className={`px-4 py-2 text-white rounded ${loading ? "bg-gray-400" : "bg-primary"
+                                        }`}
+                                >
+                                    {loading ? "Saving..." : "Save"}
+                                </button>
+                            </div>
+                        </div>
                     </div>
-                </div>
+                )}
+
 
                 {/* ================= CLOSE OUT TABLE ================= */}
                 <div className="mt-8">
@@ -377,7 +395,12 @@ export default function CloseOutModal({ open, data, onClose }: Props) {
                                     <th className="p-2 border">Title</th>
                                     <th className="p-2 border">Date</th>
                                     <th className="p-2 border">Time</th>
-                                    <th className="p-2 border">Action</th>
+
+                                    {canSave && (
+
+
+                                        <th className="p-2 border">Action</th>
+                                    )}
                                 </tr>
                             </thead>
                             <tbody>
@@ -393,21 +416,25 @@ export default function CloseOutModal({ open, data, onClose }: Props) {
                                         <td className="p-2 border">
                                             {row.fromTime} - {row.untilTime}
                                         </td>
-                                        <td className="p-2 border text-center space-x-2">
-                                            <button
-                                                onClick={() => handleEdit(row)}
-                                                className="px-2 py-1 text-xs bg-primary text-white rounded"
-                                            >
-                                                Edit
-                                            </button>
 
-                                            <button
-                                                onClick={() => handleDeleteRow(row.id)}
-                                                className="px-2 py-1 text-xs bg-red-500 text-white rounded"
-                                            >
-                                                Delete
-                                            </button>
-                                        </td>
+                                        {canSave && (
+
+                                            <td className="p-2 border text-center space-x-2">
+                                                <button
+                                                    onClick={() => handleEdit(row)}
+                                                    className="px-2 py-1 text-xs bg-primary text-white rounded"
+                                                >
+                                                    Edit
+                                                </button>
+
+                                                <button
+                                                    onClick={() => handleDeleteRow(row.id)}
+                                                    className="px-2 py-1 text-xs bg-red-500 text-white rounded"
+                                                >
+                                                    Delete
+                                                </button>
+                                            </td>
+                                        )}
                                     </tr>
                                 ))}
                             </tbody>
@@ -434,6 +461,13 @@ export default function CloseOutModal({ open, data, onClose }: Props) {
                             Next
                         </button>
                     </div>
+                    
+                                <button
+                                    onClick={onClose}
+                                    className="px-4 py-2 bg-gray-200 rounded float-end mt-4"
+                                >
+                                    Close
+                                </button>
                 </div>
 
                 <style>{`
@@ -446,6 +480,7 @@ export default function CloseOutModal({ open, data, onClose }: Props) {
           }
         `}</style>
             </div>
+            
         </div>
     );
 }

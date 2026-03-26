@@ -11,12 +11,14 @@ export default function ReservationScheduler({
     onSelectEvent,
     // onDropFromWaiting,
     onDateChange, // ✅ tambah ini
+    canSave,
 }: {
     events: any[];
     onSelectSlot: (data: any) => void;
     onSelectEvent: (data: any) => void;
     onDropFromWaiting: (data: any) => void;
     onDateChange: (start: Date, end: Date) => void;
+    canSave: boolean; // 🔥 TAMBAH
 }) {
     const tooltipRef = useRef<HTMLDivElement | null>(null);
     const calendarRef = useRef<FullCalendar | null>(null);
@@ -287,9 +289,9 @@ export default function ReservationScheduler({
             slotMinTime={slotMinTime} // dari openHours
             slotMaxTime={slotMaxTime}
             nowIndicator
-            selectable
-            editable
-            droppable
+            editable={canSave}
+            droppable={canSave}
+            selectable={canSave}
             eventOverlap={false}
             slotEventOverlap={false}
             selectOverlap={false}
@@ -415,6 +417,10 @@ export default function ReservationScheduler({
             }}
 
             eventDrop={async (info) => {
+                if (!canSave) {
+                    info.revert();
+                    return;
+                }
                 const event = info.event;
                 const extended = event.extendedProps;
                 const resourceId = event.getResources()[0]?.id;
@@ -482,6 +488,10 @@ export default function ReservationScheduler({
             }}
 
             eventReceive={async (info) => {
+                if (!canSave) {
+                    info.revert();
+                    return;
+                }
                 const start = info.event.start!;
                 const booking = info.event.extendedProps;
 

@@ -20,6 +20,23 @@ export default function NewsTodayModal({ open, onClose }: Props) {
   });
 
   const [saving, setSaving] = useState(false);
+  const [role, setRole] = useState<number | null>(null);
+
+  useEffect(() => {
+    try {
+      const raw = localStorage.getItem("auth-storage");
+      if (!raw) return;
+
+      const parsed = JSON.parse(raw);
+      const userRole = parsed?.state?.user?.role;
+
+      setRole(userRole);
+    } catch (err) {
+      console.error("Failed to parse auth-storage", err);
+    }
+  }, []);
+  const allowedRoles = [1, 2, 6];
+  const canSave = role !== null && allowedRoles.includes(role);
 
   /* ================= FETCH ================= */
   useEffect(() => {
@@ -106,6 +123,10 @@ export default function NewsTodayModal({ open, onClose }: Props) {
             Close
           </button>
 
+          
+
+          {canSave && (
+
           <button
             onClick={handleSave}
             disabled={saving}
@@ -115,6 +136,7 @@ export default function NewsTodayModal({ open, onClose }: Props) {
           >
             {saving ? "Saving..." : "Save"}
           </button>
+          )}
         </div>
 
         <style>{`

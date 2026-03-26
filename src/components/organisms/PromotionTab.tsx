@@ -16,6 +16,21 @@ export default function PromotionTab() {
   const [modalOpen, setModalOpen] = useState(false);
   const [selected, setSelected] = useState<any>(null);
   const [deleteId, setDeleteId] = useState<number | null>(null);
+  const [role, setRole] = useState<number | null>(null);
+
+  useEffect(() => {
+    try {
+      const raw = localStorage.getItem("auth-storage");
+      if (!raw) return;
+
+      const parsed = JSON.parse(raw);
+      const userRole = parsed?.state?.user?.role;
+
+      setRole(userRole);
+    } catch (err) {
+      console.error("Failed to parse auth-storage", err);
+    }
+  }, []);
 
 
   useEffect(() => {
@@ -27,19 +42,26 @@ export default function PromotionTab() {
 
   const DUMMY_IMAGE = "https://dummyimage.com/320x240/ccc/fff&text=No+Image";
 
+  const allowedRoles = [1, 2, 6];
+  const canSave = role !== null && allowedRoles.includes(role);
+
   return (
     <div className="p-4">
       {/* HEADER */}
       <div className="flex justify-end mb-4">
-        <button
-          onClick={() => {
-            setSelected(null);
-            setModalOpen(true);
-          }}
-          className="px-4 py-2 bg-primary text-white rounded-md text-sm"
-        >
-          + Add Promo
-        </button>
+
+
+        {canSave && (
+          <button
+            onClick={() => {
+              setSelected(null);
+              setModalOpen(true);
+            }}
+            className="px-4 py-2 bg-primary text-white rounded-md text-sm"
+          >
+            + Add Promo
+          </button>
+        )}
       </div>
 
       {/* TABLE */}
@@ -52,7 +74,13 @@ export default function PromotionTab() {
               <th className="p-3">Description</th>
               <th className="p-3">From</th>
               <th className="p-3">To</th>
-              <th className="p-3 text-right">Action</th>
+
+
+              {canSave && (
+
+
+                <th className="p-3 text-right">Action</th>
+              )}
             </tr>
           </thead>
 
@@ -107,24 +135,27 @@ export default function PromotionTab() {
                     {new Date(item.toDate).toLocaleDateString()}
                   </td>
 
-                  <td className="p-3 space-x-2 text-right">
-                    <button
-                      onClick={() => {
-                        setSelected(item);
-                        setModalOpen(true);
-                      }}
-                      className="text-primary text-sm"
-                    >
-                      Edit
-                    </button>
+                  {canSave && (
 
-                    <button
-                      onClick={() => setDeleteId(item.id)}
-                      className="text-red-500 text-sm"
-                    >
-                      Delete
-                    </button>
-                  </td>
+                    <td className="p-3 space-x-2 text-right">
+                      <button
+                        onClick={() => {
+                          setSelected(item);
+                          setModalOpen(true);
+                        }}
+                        className="text-primary text-sm"
+                      >
+                        Edit
+                      </button>
+
+                      <button
+                        onClick={() => setDeleteId(item.id)}
+                        className="text-red-500 text-sm"
+                      >
+                        Delete
+                      </button>
+                    </td>
+                  )}
                 </tr>
               ))}
           </tbody>
