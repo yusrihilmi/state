@@ -5,6 +5,7 @@ import Header from "../components/molecules/Header";
 import ReservationScheduler from "../components/organisms/ReservationScheduler";
 import WaitingList from "../components/organisms/WaitingList";
 import BookingManagementModal from "../components/modal/BookingManagementModal";
+import SpecialRequestModal from "../components/modal/SpecialRequestModal";
 import CloseOutModal from "../components/modal/CloseOutModal";
 import NewsTodayModal from "../components/modal/NewsTodayModal";
 import { useBookingStore } from "../stores/useBookingStore";
@@ -29,6 +30,7 @@ export default function ReservationCalendar() {
   const [modalOpen, setModalOpen] = useState(false);
   const [selectedData, setSelectedData] = useState<any>(null);
   const [newsModalOpen, setNewsModalOpen] = useState(false);
+  const [specialRequestModalOpen, setSpecialRequestModalOpen] = useState(false);
   const { fetchCloseOuts } = useCloseOutStore();
 
   const [closeOutModalOpen, setCloseOutModalOpen] = useState(false);
@@ -349,47 +351,54 @@ export default function ReservationCalendar() {
 
               </div>
 
-              <div className="flex gap-2 mx-4 justify-end">
-                <button
-                  onClick={() => {
-                    setSelectedData({
-                      status: "waiting_list",
-                    });
-                    setModalOpen(true);
-                  }}
-                  className="px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary transition"
-                >
-                  Book
-                </button>
 
-                <button
-                  onClick={() => {
-                    setSelectedData({
-                      status: "confirm",
-                    });
-                    setModalOpen(true);
-                  }}
-                  className="px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 transition"
-                >
-                  Walk In
-                </button>
-                <button
-                  onClick={() => {
-                    setSelectedCloseOut(null);
-                    setCloseOutModalOpen(true);
-                  }}
-                  className="px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600"
-                >
-                  Close Out
-                </button>
-                <button
-                  onClick={() => setNewsModalOpen(true)}
-                  className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600"
-                >
-                  News Today
-                </button>
-              </div>
 
+            </div>
+            <div className="flex gap-2 mx-4 my-4 justify-end">
+              <button
+                onClick={() => {
+                  setSelectedData({
+                    status: "waiting_list",
+                  });
+                  setModalOpen(true);
+                }}
+                className="px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary transition"
+              >
+                Book
+              </button>
+
+              <button
+                onClick={() => {
+                  setSelectedData({
+                    status: "confirm",
+                  });
+                  setModalOpen(true);
+                }}
+                className="px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 transition"
+              >
+                Walk In
+              </button>
+              <button
+                onClick={() => {
+                  setSelectedCloseOut(null);
+                  setCloseOutModalOpen(true);
+                }}
+                className="px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600"
+              >
+                Close Out
+              </button>
+              <button
+                onClick={() => setNewsModalOpen(true)}
+                className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600"
+              >
+                News Today
+              </button>
+              <button
+                onClick={() => setSpecialRequestModalOpen(true)}
+                className="px-4 py-2 bg-yellow-500 text-white rounded-lg hover:bg-yellow-600"
+              >
+                Special Request
+              </button>
             </div>
 
 
@@ -445,6 +454,10 @@ export default function ReservationCalendar() {
           <NewsTodayModal
             open={newsModalOpen}
             onClose={() => setNewsModalOpen(false)}
+          />
+          <SpecialRequestModal
+            open={specialRequestModalOpen}
+            onClose={() => setSpecialRequestModalOpen(false)}
           />
         </main>
       </div>

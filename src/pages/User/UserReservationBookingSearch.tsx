@@ -15,6 +15,7 @@ export default function UserReservationBookingSearch() {
     fetchReservationStyle,
     bookingDetail,
     fetchBookingByCode,
+    fetchBookingByPhone,
     loading,
     resetBooking,
     error,
@@ -28,6 +29,7 @@ export default function UserReservationBookingSearch() {
   const [saved, setSaved] = useState(false);
 
   const [layoutConfig, setLayoutConfig] = useState<any>(null);
+  const [bookingList, setBookingList] = useState<any[]>([]);
 
   useEffect(() => {
     fetchReservationStyle();
@@ -39,11 +41,11 @@ export default function UserReservationBookingSearch() {
 
   // ✅ mapping hasil API ke UI format
   useEffect(() => {
-    
-  if (!bookingDetail) {
-    setReservation(null);
-    return;
-  }
+
+    if (!bookingDetail) {
+      setReservation(null);
+      return;
+    }
 
     setReservation({
       ...bookingDetail,
@@ -86,10 +88,37 @@ export default function UserReservationBookingSearch() {
     }
   };
 
-  const handleSearch = async () => {
-    if (!searchCode) return;
+const handleSearch = async () => {
+  if (!searchCode) return;
+
+  setReservation(null);
+  setBookingList([]);
+
+  if (searchCode.length <= 6) {
+    // 🔥 BY CODE
     await fetchBookingByCode(searchCode.toUpperCase());
-  };
+  } else {
+    // 🔥 BY PHONE
+    const res = await fetchBookingByPhone(searchCode);
+
+    if (res?.length) {
+      // optional: sort terbaru
+      const sorted = res.sort(
+        (a: any, b: any) =>
+          new Date(b.date + " " + b.time).getTime() -
+          new Date(a.date + " " + a.time).getTime()
+      );
+
+      setBookingList(sorted);
+    }
+  }
+};
+
+  useEffect(() => {
+    if (bookingDetail) {
+      setBookingList([]); // clear list kalau sudah masuk detail
+    }
+  }, [bookingDetail]);
 
   const formatDate = (iso: string) =>
     new Date(iso).toLocaleDateString("en-US", {
@@ -175,6 +204,18 @@ export default function UserReservationBookingSearch() {
     }
   };
 
+  const isCompleted = reservation && reservation.statusDp === "completed";
+
+  const minimumPax = layoutConfig?.minimumPax ?? 0;
+
+  const bookingTitle = reservation?.needDp
+    ? (isCompleted
+      ? "Booking Registration Complete!"
+      : "Booking Pending Payment!")
+    : (reservation?.guest >= minimumPax
+      ? "Booking Pending Payment!"
+      : "Booking Registration Complete!");
+
   return (
     <div className="relative h-screen font-montserrat text-white overflow-hidden">
       {/* BACKGROUND */}
@@ -213,7 +254,7 @@ export default function UserReservationBookingSearch() {
                   type="text"
                   value={searchCode}
                   onChange={(e) => setSearchCode(e.target.value)}
-                  placeholder="Enter Booking Code"
+                  placeholder="Booking Code or Phone Number"
                   className="w-full border rounded-lg px-3 py-2 text-center uppercase"
                 />
 
@@ -230,6 +271,39 @@ export default function UserReservationBookingSearch() {
                     Booking not found
                   </p>
                 )}
+              </div>
+            )}
+
+            {/* BOOKING LIST (PHONE SEARCH) */}
+            {!reservation && bookingList.length > 0 && (
+              <div className="bg-white p-5 rounded-xl text-black space-y-3 shadow">
+                <h2 className="text-lg font-semibold text-center">
+                  Your Bookings
+                </h2>
+
+                {bookingList.map((item) => (
+                  <div
+                    key={item.id}
+                    onClick={async () => {
+                      // 🔥 klik → ambil detail by code
+                      await fetchBookingByCode(item.bookingCode);
+                    }}
+                    className="border rounded-lg p-3 cursor-pointer hover:bg-gray-50"
+                  >
+                    <div className="flex justify-between items-center">
+                      <span className="font-mono font-semibold">
+                        {item.bookingCode}
+                      </span>
+                      <span className={`text-xs px-2 py-1 rounded ${getStatusBadge(item.status)}`}>
+                        {item.status.replace("_", " ").toUpperCase()}
+                      </span>
+                    </div>
+
+                    <div className="text-xs text-gray-500 mt-1">
+                      {formatDate(item.date)} • {item.time}
+                    </div>
+                  </div>
+                ))}
               </div>
             )}
 
@@ -261,7 +335,7 @@ export default function UserReservationBookingSearch() {
               >
 
                 <h2 className="text-center font-semibold text-primary">
-                  {reservation.guest >= 5 ? "Booking Pending Payment!" : "Booking Registration Complete!"}
+                  {bookingTitle}
                 </h2>
                 <div className="flex justify-center">
                   <span
@@ -298,11 +372,10 @@ export default function UserReservationBookingSearch() {
                   {reservation.needDp && (
                     <div className="mt-4 p-3 border border-dashed border-gray-400 rounded-lg text-sm">
 
-                      {/* ===== BELUM BAYAR ===== */}
-                      {!reservation.downpaymentProof && (
+                      {/* ===== BELUM BAYAR / PENDING ===== */}
+                      {!isCompleted && (
                         <>
                           <p className="font-semibold mb-1">⚠️ Deposit Payment Information</p>
-
 
                           <p className="text-sm">
                             Deposit Amount :
@@ -312,7 +385,7 @@ export default function UserReservationBookingSearch() {
                           <p className="mt-2">
                             <b>Please transfer the deposit to the following account:</b>
                             <br />
-                              {layoutConfig?.bankType} - {layoutConfig?.bankName}<br />
+                            {layoutConfig?.bankType} - {layoutConfig?.bankName}<br />
                             Account Number: <b>{data.accountNumber}</b>
                           </p>
 
@@ -322,8 +395,8 @@ export default function UserReservationBookingSearch() {
                         </>
                       )}
 
-                      {/* ===== SUDAH BAYAR ===== */}
-                      {reservation.downpaymentProof && (
+                      {/* ===== SUDAH BAYAR / COMPLETED ===== */}
+                      {isCompleted && (
                         <>
                           <p className="font-semibold mb-2 text-green-600">
                             ✅ Deposit Payment Submitted
@@ -333,18 +406,6 @@ export default function UserReservationBookingSearch() {
                             Deposit Amount :
                             <b> Rp {Number(reservation.totalDp).toLocaleString("id-ID")}</b>
                           </p>
-
-                          {/* <div className="mt-3">
-                            <img
-                              src={reservation.downpaymentProof}
-                              alt="Deposit Proof"
-                              className="w-32 h-32 object-cover rounded border cursor-pointer hover:opacity-80"
-                              onClick={() => window.open(reservation.downpaymentProof, "_blank")}
-                            />
-                            <p className="text-xs text-gray-500 mt-1">
-                              Click image to view full size
-                            </p>
-                          </div> */}
                         </>
                       )}
                     </div>
@@ -460,8 +521,8 @@ export default function UserReservationBookingSearch() {
 
             <button
               onClick={() => {
-  resetBooking(); // ini penting
-  setReservation(null);
+                resetBooking(); // ini penting
+                setReservation(null);
                 setSearchCode("");
                 localStorage.removeItem("reservation_step_1");
                 localStorage.removeItem("reservation_step_2");
@@ -470,20 +531,20 @@ export default function UserReservationBookingSearch() {
                 localStorage.removeItem("reservation_step_5");
                 localStorage.removeItem("reservation_step_6");
 
-    setTimeout(() => {
-      navigate("/state/reservation");
-    }, 100);
+                setTimeout(() => {
+                  navigate("/state/reservation");
+                }, 100);
               }}
               className="w-full py-3 rounded-lg bg-gray-300 text-gray-700 hover:text-gray-700"
             >
-              Back to homepage
+              Close
             </button>
 
             {reservation && (
               <button
                 onClick={() => {
-  resetBooking(); // ini penting
-  setReservation(null);
+                  resetBooking(); // ini penting
+                  setReservation(null);
                   setSearchCode("");
                 }}
                 className="w-full py-2 rounded-lg bg-gray-300 text-black"

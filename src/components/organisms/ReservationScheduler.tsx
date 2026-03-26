@@ -278,6 +278,12 @@ export default function ReservationScheduler({
                 minute: "2-digit",
                 hour12: false,
             }}
+            titleFormat={{
+                weekday: "long",
+                year: "numeric",
+                month: "long",
+                day: "numeric",
+            }}
             slotMinTime={slotMinTime} // dari openHours
             slotMaxTime={slotMaxTime}
             nowIndicator

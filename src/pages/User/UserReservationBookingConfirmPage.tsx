@@ -419,7 +419,7 @@ export default function UserReservationBookingConfirmPage() {
               }}
               className="w-full py-3 rounded-lg bg-gray-300 text-gray-700 hover:text-gray-700"
             >
-              Back to homepage
+              Close
             </button>
           </div>
         </div>

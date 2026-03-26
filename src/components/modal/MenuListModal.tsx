@@ -191,7 +191,7 @@ export default function MenuListModal({ open, data, onClose }: any) {
             />
           </div>
           {/* STATUS */}
-          <div>
+          {/* <div>
             <label className="text-sm font-medium mb-1 block">
               Status
             </label>
@@ -219,7 +219,7 @@ export default function MenuListModal({ open, data, onClose }: any) {
                 Inactive
               </button>
             </div>
-          </div>
+          </div> */}
 
         </div>
 

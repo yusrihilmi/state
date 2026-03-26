@@ -164,7 +164,7 @@ export default function UserReservationCustomerPage() {
                 autoComplete="tel"
                 value={form.customerPhone}
                 onChange={handleChange}
-                placeholder="+62 xxx xxxx"
+                placeholder="08xxxx"
                 className="w-full mt-1 px-4 py-3 rounded-lg bg-white text-black outline-none"
               />
             </div>

@@ -45,7 +45,7 @@ export default function UserHomePage() {
         <div className="relative min-h-screen font-montserrat text-white">
             {/* BACKGROUND */}
             <img
-                src={loginImage}
+                src={data.backgroundImage || loginImage}
                 alt="Background"
                 className="absolute inset-0 w-full h-full object-cover object-center"
             />
@@ -179,12 +179,12 @@ function Custom3Layout({
                     <div className="block w-full py-3 rounded-md font-semibold text-white text-center bg-gray-400 cursor-not-allowed">
                         Closed ({data.openHours} - {data.closedHours})
                     </div>
-                )}
+                )}  
                 <Link
                     to="/state/reservation/search"
                     className="block w-full mt-4 py-3 rounded-md font-semibold text-white hover:text-white text-center bg-transparent underline"
                 >
-                    Check Your Booking Code
+                    Check Your Booking Status
                 </Link>
                 <a
                     href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(
@@ -200,6 +200,8 @@ function Custom3Layout({
                 </a>
                 <p>{data.email}</p>
                 <p>{data.phone}</p>
+                <a href={data.website} className="text-primary hover:text-primary bg-white mt-4 py-1 px-2 rounded-md" target="_blank" rel="noopener noreferrer">Visit Us </a>
+
             </div>
         </>
     );
@@ -292,7 +294,7 @@ function Custom2Layout({
                     to="/state/reservation/search"
                     className="block w-full mt-4 py-3 rounded-md font-semibold text-white hover:text-white text-center bg-transparent underline"
                 >
-                    Check Your Booking Code
+                    Check Your Booking Status
                 </Link>
 
                 <a
@@ -309,6 +311,7 @@ function Custom2Layout({
                 </a>
                 <p>{data.email}</p>
                 <p>{data.phone}</p>
+                <a href={data.website} className="text-primary hover:text-primary bg-white mt-4 py-1 px-2 rounded-md" target="_blank" rel="noopener noreferrer">Visit Us </a>
             </div>
 
             {/* FLOATING CALL US */}
@@ -414,6 +417,7 @@ function DefaultLayout({
                     </a>
                     <p>{data.email}</p>
                     <p>{data.phone}</p>
+                    <a href={data.website} className="text-primary hover:text-primary bg-white mt-4 py-1 px-2 rounded-md" target="_blank" rel="noopener noreferrer">Visit Us </a>
                 </div>
             </div>
 
@@ -437,7 +441,7 @@ function DefaultLayout({
                     to="/state/reservation/search"
                     className="block w-full mt-4 py-3 rounded-md font-semibold text-white hover:text-white text-center bg-transparent underline"
                 >
-                    Check Your Booking Code
+                    Check Your Booking Status
                 </Link>
             </div>
 

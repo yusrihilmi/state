@@ -20,6 +20,7 @@ export default function RestaurantSettings() {
 
   const [form, setForm] = useState<any>(null);
   const [logoFile, setLogoFile] = useState<File | null>(null);
+  const [bgImageFile, setBgImageFile] = useState<File | null>(null);
   const [openPicker, setOpenPicker] = useState<string | null>(null);
   useEffect(() => {
     const handleClickOutside = () => setOpenPicker(null);
@@ -77,6 +78,9 @@ export default function RestaurantSettings() {
     if (logoFile) {
       fd.append("logo", logoFile);
     }
+    if (bgImageFile) {
+      fd.append("backgroundImage", bgImageFile);
+    }
 
 
     try {
@@ -97,6 +101,12 @@ export default function RestaurantSettings() {
     ? URL.createObjectURL(logoFile)
     : form.logo
       ? `${form.logo}`
+      : "https://dummyimage.com/600/000/fff";
+
+  const backgroundImage = bgImageFile
+    ? URL.createObjectURL(bgImageFile)
+    : form.logo
+      ? `${form.backgroundImage}`
       : "https://dummyimage.com/600/000/fff";
 
   const generateTimeOptions = () => {
@@ -133,29 +143,56 @@ export default function RestaurantSettings() {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
 
                 {/* LOGO */}
-                <div>
-                  <label className="text-sm font-medium">Logo Restaurant</label>
-                  <div className="mt-4 w-60">
-                    <div className="relative group cursor-pointer">
-                      <img
-                        src={logoPreview}
-                        className="w-full h-60 object-cover rounded-full border"
-                      />
-                      <label className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition flex items-center justify-center rounded-full cursor-pointer">
-                        <span className="text-white text-sm">
-                          Upload Photo
-                          <input
-                            type="file"
-                            accept="image/*"
-                            className="hidden"
-                            onChange={(e) =>
-                              setLogoFile(e.target.files?.[0] || null)
-                            }
-                          />
-                        </span>
-                      </label>
+                <div className="flex gap-6">
+                  <div>
+                    <label className="text-sm font-medium">Logo Restaurant</label>
+                    <div className="mt-4 w-60">
+                      <div className="relative group cursor-pointer">
+                        <img
+                          src={logoPreview}
+                          className="w-full h-60 object-cover rounded-full border"
+                        />
+                        <label className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition flex items-center justify-center rounded-full cursor-pointer">
+                          <span className="text-white text-sm">
+                            Upload Photo
+                            <input
+                              type="file"
+                              accept="image/*"
+                              className="hidden"
+                              onChange={(e) =>
+                                setLogoFile(e.target.files?.[0] || null)
+                              }
+                            />
+                          </span>
+                        </label>
+                      </div>
                     </div>
                   </div>
+                  <div>
+                    <label className="text-sm font-medium">Background Image</label>
+                    <div className="mt-4 w-60">
+                      <div className="relative group cursor-pointer">
+                        <img
+                          src={backgroundImage}
+                          className="w-full h-60 object-cover rounded-full border"
+                        />
+                        <label className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition flex items-center justify-center rounded-full cursor-pointer">
+                          <span className="text-white text-sm">
+                            Upload Photo
+                            <input
+                              type="file"
+                              accept="image/*"
+                              className="hidden"
+                              onChange={(e) =>
+                                setBgImageFile(e.target.files?.[0] || null)
+                              }
+                            />
+                          </span>
+                        </label>
+                      </div>
+                    </div>
+                  </div>
+
                 </div>
 
                 {/* COLORS + LAYOUT */}

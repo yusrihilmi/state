@@ -20,6 +20,7 @@ export interface ReservationResponse {
 export interface ReservationStyle {
   id: number;
   logo: string;
+  backgroundImage: string;
   name: string;
   description: string;
   address: string;
@@ -181,11 +182,49 @@ export interface BookingDetailResponse {
   data: BookingDetail;
 }
 
+export interface BookingListResponse {
+  status: string;
+  message: string;
+  data: BookingDetail[];
+}
+
+export interface SpecialRequestItem {
+  id: number;
+  title: string;
+}
+
+export interface SpecialRequestListResponse {
+  status: string;
+  message: string;
+  data: SpecialRequestItem[];
+}
+
+export const getSpecialRequestsApi = async (): Promise<SpecialRequestItem[]> => {
+  const response = await fetch(
+    `${import.meta.env.VITE_API_BASE_URL}/microsite/special-requests`,
+    {
+      method: "GET",
+      headers: {
+        "Content-Type": "application/json",
+        "x-api-key": import.meta.env.VITE_API_KEY,
+      },
+    }
+  );
+
+  if (!response.ok) {
+    const errorText = await response.text();
+    throw new Error(errorText || "Failed to fetch special requests");
+  }
+
+  const result: SpecialRequestListResponse = await response.json();
+  return result.data;
+};
+
 export const getBookingByCodeApi = async (
   code: string
 ): Promise<BookingDetail> => {
   const response = await fetch(
-    `https://state.genbio.id/microsite/bookings/${code}`,
+    `${import.meta.env.VITE_API_BASE_URL}/microsite/bookings/${code}`,
     {
       method: "GET",
       headers: {
@@ -204,12 +243,35 @@ export const getBookingByCodeApi = async (
   return result.data;
 };
 
+export const getBookingByPhoneApi = async (
+  code: string
+): Promise<BookingDetail[]> => {
+  const response = await fetch(
+    `${import.meta.env.VITE_API_BASE_URL}/microsite/bookings/by-phone/${code}`,
+    {
+      method: "GET",
+      headers: {
+        "Content-Type": "application/json",
+        "x-api-key": import.meta.env.VITE_API_KEY,
+      },
+    }
+  );
+
+  if (!response.ok) {
+    const errorText = await response.text();
+    throw new Error(errorText || "Failed to fetch booking detail");
+  }
+
+  const result: BookingListResponse = await response.json();
+  return result.data; // ✅ array
+};
+
 export const getAvailableTableCategoriesApi = async (
   date: string,
   time: string
 ): Promise<AvailableTableCategory[]> => {
   const response = await fetch(
-    `https://state.genbio.id/microsite/available-table-categories?date=${date}&time=${time}`,
+    `${import.meta.env.VITE_API_BASE_URL}/microsite/available-table-categories?date=${date}&time=${time}`,
     {
       method: "GET",
       headers: {
@@ -232,7 +294,7 @@ export const getAvailableTimeSlotsApi = async (
   date: string
 ): Promise<string[]> => {
   const response = await fetch(
-    `https://state.genbio.id/microsite/available-time-slots?date=${date}`,
+    `${import.meta.env.VITE_API_BASE_URL}/microsite/available-time-slots?date=${date}`,
     {
       method: "GET",
       headers: {
@@ -302,7 +364,7 @@ export const getMenusApi = async (
 
 // POST reservation
 export async function postReservation(payload: ReservationPayload): Promise<ReservationResponse> {
-  const response = await fetch("https://state.genbio.id/microsite/booking", {
+  const response = await fetch(`${import.meta.env.VITE_API_BASE_URL}/microsite/booking`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",

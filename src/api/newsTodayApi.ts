@@ -23,7 +23,7 @@ export interface NewsTodayPayload {
 // GET
 export const getNewsTodayApi = async (): Promise<NewsTodayResponse> => {
   return fetchWithAuth<NewsTodayResponse>(
-    `https://state.genbio.id/news-today`,
+    `${import.meta.env.VITE_API_BASE_URL}/news-today`,
     {
       method: "GET",
     }
@@ -35,7 +35,7 @@ export const createNewsTodayApi = async (
   payload: NewsTodayPayload
 ): Promise<NewsTodayResponse> => {
   return fetchWithAuth<NewsTodayResponse>(
-    `https://state.genbio.id/news-today`,
+    `${import.meta.env.VITE_API_BASE_URL}/news-today`,
     {
       method: "POST",
       headers: {
@@ -52,7 +52,7 @@ export const updateNewsTodayApi = async (
   payload: NewsTodayPayload
 ): Promise<NewsTodayResponse> => {
   return fetchWithAuth<NewsTodayResponse>(
-    `https://state.genbio.id/news-today/${id}`,
+    `${import.meta.env.VITE_API_BASE_URL}/news-today/${id}`,
     {
       method: "PATCH",
       headers: {

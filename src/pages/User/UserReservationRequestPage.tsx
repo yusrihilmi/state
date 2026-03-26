@@ -7,20 +7,11 @@ import bgImage from "../../assets/login-image.png";
 
 export default function UserReservationRequestPage() {
     const navigate = useNavigate();
-    const { data, fetchReservationStyle } = useReservationStore();
+    const { data, fetchReservationStyle, specialRequests, fetchSpecialRequests } = useReservationStore();
 
     const [form, setForm] = useState({
         note: "",
     });
-
-    const defaultRequests = [
-        "Near window",
-        "Birthday celebration / Anniversary",
-        "High chair",
-        "Smoking area",
-        "Take Away",
-        "Wheelchair access",
-    ];
 
     const handleSelectRequest = (text: string) => {
         setForm((prev) => {
@@ -59,6 +50,8 @@ export default function UserReservationRequestPage() {
 
     useEffect(() => {
         fetchReservationStyle();
+
+        fetchSpecialRequests();
     }, []);
 
     useEffect(() => {
@@ -148,29 +141,35 @@ export default function UserReservationRequestPage() {
                     {/* ================= ACTION ================= */}
                     <div className="px-6 mt-6 space-y-3 pb-10">
 
-                        <div className="grid grid-cols-2 gap-2">
-                            {defaultRequests.map((item) => {
-                                const active = form.note
-                                    .split(",")
-                                    .map((t) => t.trim())
-                                    .includes(item);
+                        <div className="grid grid-cols-1 gap-2">
+                            {!specialRequests.length ? (
+                                <p className="text-white text-sm">Loading special requests...</p>
+                            ) : (
+                                <div className="grid grid-cols-2 gap-2">
+                                    {specialRequests.map((item) => {
+                                        const active = form.note
+                                            .split(",")
+                                            .map((t) => t.trim())
+                                            .includes(item.title);
 
-                                return (
-                                    <button
-                                        key={item}
-                                        type="button"
-                                        onClick={() => handleSelectRequest(item)}
-                                        className={`px-3 py-2 rounded-lg h-20 text-sm border transition text-center
-                                        ${active
-                                                ? "bg-primary text-white border-primary"
-                                                : "bg-white text-black border-gray-300"
-                                            }
-                                        `}
-                                    >
-                                        {item}
-                                    </button>
-                                );
-                            })}
+                                        return (
+                                            <button
+                                                key={item.id}
+                                                type="button"
+                                                onClick={() => handleSelectRequest(item.title)}
+                                                className={`px-3 py-2 rounded-lg h-20 text-sm border transition text-center
+                        ${active
+                                                        ? "bg-primary text-white border-primary"
+                                                        : "bg-white text-black border-gray-300"
+                                                    }
+                    `}
+                                            >
+                                                {item.title}
+                                            </button>
+                                        );
+                                    })}
+                                </div>
+                            )}
                         </div>
 
 

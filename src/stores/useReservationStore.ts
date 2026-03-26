@@ -8,7 +8,9 @@ import {
   getMenusApi,
   getAvailableTimeSlotsApi,
   getAvailableTableCategoriesApi,
-  getBookingByCodeApi
+  getBookingByCodeApi,
+  getSpecialRequestsApi,
+  getBookingByPhoneApi
 } from "../api/reservationApi";
 
 import type {
@@ -19,6 +21,7 @@ import type {
   MenuCategory,
   MenuItem,
   AvailableTableCategory,
+  SpecialRequestItem,
   BookingDetail
 } from "../api/reservationApi";
 
@@ -38,7 +41,10 @@ interface ReservationState {
   availableTimeSlots: string[];
   availableTableCategories: AvailableTableCategory[];
   bookingDetail: BookingDetail | null;
+  specialRequests: SpecialRequestItem[];
+  fetchSpecialRequests: () => Promise<void>;
   fetchBookingByCode: (code: string) => Promise<void>;
+  fetchBookingByPhone: (code: string) => Promise<BookingDetail[]>;
   fetchAvailableTableCategories: (date: string, time: string) => Promise<void>;
   fetchAvailableTimeSlots: (date: string) => Promise<void>;
 
@@ -66,12 +72,27 @@ export const useReservationStore = create<ReservationState>((set, get) => ({
   availableTimeSlots: [],
   availableTableCategories: [],
   bookingDetail: null,
+  specialRequests: [],
 
-   resetBooking: () =>
+  resetBooking: () =>
     set({
       bookingDetail: null,
       error: null,
     }),
+
+  fetchSpecialRequests: async () => {
+    try {
+      set({ loading: true });
+
+      const res = await getSpecialRequestsApi();
+
+      set({ specialRequests: res });
+    } catch (err) {
+      console.error("Failed to fetch special requests", err);
+    } finally {
+      set({ loading: false });
+    }
+  },
 
   fetchBookingByCode: async (code: string) => {
     try {
@@ -83,6 +104,23 @@ export const useReservationStore = create<ReservationState>((set, get) => ({
     } catch (err: any) {
       console.error("Failed to fetch booking detail:", err);
       set({ error: err.message });
+    } finally {
+      set({ loading: false });
+    }
+  },
+
+  fetchBookingByPhone: async (code: string) => {
+    try {
+      set({ loading: true, error: null });
+
+      const res = await getBookingByPhoneApi(code);
+
+      // ❌ JANGAN set bookingDetail
+      return res; // ✅ return array
+    } catch (err: any) {
+      console.error("Failed to fetch booking list:", err);
+      set({ error: err.message });
+      return [];
     } finally {
       set({ loading: false });
     }
