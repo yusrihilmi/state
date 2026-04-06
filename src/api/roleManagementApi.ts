@@ -8,7 +8,9 @@ export interface RoleManagement {
   username: string;
   fullname: string;
   password: string;
-  role: number;
+  role_id: number;
+  roleId: number;
+  role: any
 }
 
 export interface RoleManagementListResponse {
@@ -32,7 +34,7 @@ export interface RoleManagementPayload {
   username: string;
   fullname: string;
   password: string;
-  role: number;
+  role_id: number;
 }
 
 /* ================= API ================= */

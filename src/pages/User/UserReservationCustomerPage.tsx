@@ -239,7 +239,7 @@ export default function UserReservationCustomerPage() {
                 if (hasStep3) {
                   navigate("/state/reservation/step-3-order");
                 } else {
-                  navigate("/state/reservation/step-2");
+                  navigate("/state/reservation/step-1");
                 }
               }}
               className="w-full py-3 block text-center rounded-lg hover:text-gray-700 bg-gray-300 text-gray-700"

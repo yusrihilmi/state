@@ -10,7 +10,8 @@ import {
   getAvailableTableCategoriesApi,
   getBookingByCodeApi,
   getSpecialRequestsApi,
-  getBookingByPhoneApi
+  getBookingByPhoneApi,
+  getTableAvailabilityApi
 } from "../api/reservationApi";
 
 import type {
@@ -22,7 +23,8 @@ import type {
   MenuItem,
   AvailableTableCategory,
   SpecialRequestItem,
-  BookingDetail
+  BookingDetail,
+  TableAvailabilityItem
 } from "../api/reservationApi";
 
 
@@ -42,10 +44,19 @@ interface ReservationState {
   availableTableCategories: AvailableTableCategory[];
   bookingDetail: BookingDetail | null;
   specialRequests: SpecialRequestItem[];
+  loadingTableAvailability: boolean;
+  tableAvailability: TableAvailabilityItem[];
+  fetchTableAvailability: (
+    date: string,
+    time: string,
+    totalPax: number,
+    categoryId: number
+  ) => Promise<void>;
+  resetTableAvailability: () => void;
   fetchSpecialRequests: () => Promise<void>;
   fetchBookingByCode: (code: string) => Promise<void>;
   fetchBookingByPhone: (code: string) => Promise<BookingDetail[]>;
-  fetchAvailableTableCategories: (date: string, time: string) => Promise<void>;
+  fetchAvailableTableCategories: () => Promise<void>;
   fetchAvailableTimeSlots: (date: string) => Promise<void>;
 
   fetchMenuCategories: () => Promise<void>;
@@ -73,12 +84,38 @@ export const useReservationStore = create<ReservationState>((set, get) => ({
   availableTableCategories: [],
   bookingDetail: null,
   specialRequests: [],
+  tableAvailability: [],
+  loadingTableAvailability: false,
+
+  resetTableAvailability: () =>
+  set({
+    tableAvailability: [],
+  }),
 
   resetBooking: () =>
     set({
       bookingDetail: null,
       error: null,
     }),
+
+  fetchTableAvailability: async (date, time, totalPax, categoryId) => {
+    try {
+      set({ loadingTableAvailability: true });
+
+      const res = await getTableAvailabilityApi(
+        date,
+        time,
+        totalPax,
+        categoryId
+      );
+
+      set({ tableAvailability: res });
+    } catch (err) {
+      console.error("Failed to fetch table availability", err);
+    } finally {
+      set({ loadingTableAvailability: false });
+    }
+  },
 
   fetchSpecialRequests: async () => {
     try {
@@ -126,11 +163,11 @@ export const useReservationStore = create<ReservationState>((set, get) => ({
     }
   },
 
-  fetchAvailableTableCategories: async (date: string, time: string) => {
+  fetchAvailableTableCategories: async () => {
     try {
       set({ loading: true });
 
-      const res = await getAvailableTableCategoriesApi(date, time);
+      const res = await getAvailableTableCategoriesApi();
 
       set({ availableTableCategories: res });
     } catch (err) {

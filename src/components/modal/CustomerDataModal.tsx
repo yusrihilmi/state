@@ -52,7 +52,7 @@ export default function CustomerDataModal({ open, data, onClose }: any) {
                 <th className="p-3 w-12">No</th>
                 <th className="p-3">Date</th>
                 <th className="p-3">Time</th>
-                <th className="p-3">Table</th>
+                {/* <th className="p-3">Table</th> */}
                 <th className="p-3">Pax</th>
                 <th className="p-3">Status</th>
                 <th className="p-3">Booking Code</th>
@@ -76,9 +76,9 @@ export default function CustomerDataModal({ open, data, onClose }: any) {
                     </td>
                     <td className="p-3">{booking.date}</td>
                     <td className="p-3">{booking.time}</td>
-                    <td className="p-3">
+                    {/* <td className="p-3">
                       {booking.table?.number || "-"}
-                    </td>
+                    </td> */}
                     <td className="p-3">{booking.totalPax} Guest</td>
                     <td className="p-3 capitalize">
                       {booking.status.replace("_", " ")}

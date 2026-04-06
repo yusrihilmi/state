@@ -1,10 +1,10 @@
 import { useEffect, useState } from "react";
-import LoginForm from "../components/organisms/LoginForm";
+import ResetNewPasswordForm from "../components/organisms/ResetNewPasswordForm";
 import loginImage from "../assets/login-image.png";
 import logoMillbook from "../assets/logo-millbook.png";
 import logoStateDefault from "../assets/logo-state.png";
 
-export default function LoginPage() {
+export default function ResetPasswordPage() {
   const [logoState, setLogoState] = useState<string>(logoStateDefault);
   const [backgroundImage, setBackgroundImage] = useState<string>(loginImage);
 
@@ -36,7 +36,7 @@ export default function LoginPage() {
       {/* Background */}
       <img
         src={backgroundImage}
-        alt="Login Background"
+        alt="Reset Password Background"
         className="absolute inset-0 w-full h-full object-cover"
       />
 
@@ -55,7 +55,7 @@ export default function LoginPage() {
           />
 
           {/* Logo STATE */}
-          <div className="text-center">
+          <div className="text-center mb-4">
             <img
               src={logoState}
               alt="State"
@@ -63,7 +63,8 @@ export default function LoginPage() {
             />
           </div>
 
-          <LoginForm />
+          {/* 🔥 Form Reset Password */}
+          <ResetNewPasswordForm />
         </div>
       </div>
     </div>

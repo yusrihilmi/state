@@ -20,7 +20,7 @@ export default function NewsTodayModal({ open, onClose }: Props) {
   });
 
   const [saving, setSaving] = useState(false);
-  const [role, setRole] = useState<number | null>(null);
+  const [canSave, setCanSave] = useState(false);
 
   useEffect(() => {
     try {
@@ -28,15 +28,21 @@ export default function NewsTodayModal({ open, onClose }: Props) {
       if (!raw) return;
 
       const parsed = JSON.parse(raw);
-      const userRole = parsed?.state?.user?.role;
+      const access = parsed?.state?.user?.access || [];
 
-      setRole(userRole);
+      const hasPermission = access.some(
+        (item: any) =>
+          item.menu_id === 5 &&
+          item.no_access === false &&
+          item.view_edit === true
+      );
+
+      setCanSave(hasPermission);
+
     } catch (err) {
       console.error("Failed to parse auth-storage", err);
     }
   }, []);
-  const allowedRoles = [1, 2, 6];
-  const canSave = role !== null && allowedRoles.includes(role);
 
   /* ================= FETCH ================= */
   useEffect(() => {
@@ -105,7 +111,9 @@ export default function NewsTodayModal({ open, onClose }: Props) {
 
           <textarea
             rows={6}
-            className="input"
+            className={`input ${!canSave ? "cursor-not-allowed bg-gray-100" : ""
+              }`}
+            disabled={!canSave}
             value={form.newsToday}
             onChange={(e) =>
               setForm({ newsToday: e.target.value })
@@ -123,19 +131,18 @@ export default function NewsTodayModal({ open, onClose }: Props) {
             Close
           </button>
 
-          
+
 
           {canSave && (
 
-          <button
-            onClick={handleSave}
-            disabled={saving}
-            className={`px-4 py-2 text-white rounded ${
-              saving ? "bg-gray-400" : "bg-primary"
-            }`}
-          >
-            {saving ? "Saving..." : "Save"}
-          </button>
+            <button
+              onClick={handleSave}
+              disabled={saving}
+              className={`px-4 py-2 text-white rounded ${saving ? "bg-gray-400" : "bg-primary"
+                }`}
+            >
+              {saving ? "Saving..." : "Save"}
+            </button>
           )}
         </div>
 

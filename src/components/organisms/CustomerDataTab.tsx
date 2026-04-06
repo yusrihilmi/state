@@ -22,7 +22,7 @@ export default function CustomerDataTab() {
   const [formOpen, setFormOpen] = useState(false);
   const [selected, setSelected] = useState<any>(null);
   const [deleteId, setDeleteId] = useState<number | null>(null);
-  const [role, setRole] = useState<number | null>(null);
+  const [canSave, setCanSave] = useState(false);
 
   useEffect(() => {
     try {
@@ -30,9 +30,17 @@ export default function CustomerDataTab() {
       if (!raw) return;
 
       const parsed = JSON.parse(raw);
-      const userRole = parsed?.state?.user?.role;
+      const access = parsed?.state?.user?.access || [];
 
-      setRole(userRole);
+      const hasPermission = access.some(
+        (item: any) =>
+          item.menu_id === 12 &&
+          item.no_access === false &&
+          item.view_edit === true
+      );
+
+      setCanSave(hasPermission);
+
     } catch (err) {
       console.error("Failed to parse auth-storage", err);
     }
@@ -99,8 +107,6 @@ export default function CustomerDataTab() {
       alert("Failed to export Excel");
     }
   };
-  const allowedRoles = [1, 2, 6];
-  const canSave = role !== null && allowedRoles.includes(role);
 
   return (
     <div className="p-4">

@@ -36,7 +36,24 @@ export default function WaitingList({ data = [], onClick }: any) {
             dpReceipt: el.getAttribute("data-dpreceipt") || null,
             endOffsetMinutes: minutes,
             customerId: el.getAttribute("data-customerid") || null,
-          },
+            downpaymentProof: el.getAttribute("data-downpaymentproof") || null,
+            statusDp: el.getAttribute("data-statusdp") || "pending",
+
+            dp1: el.getAttribute("data-dp1") || "0",
+            dateDp1: el.getAttribute("data-datedp1") || "",
+
+            dp2: el.getAttribute("data-dp2") || "0",
+            dateDp2: el.getAttribute("data-datedp2") || "",
+
+            dp3: el.getAttribute("data-dp3") || "0",
+            dateDp3: el.getAttribute("data-datedp3") || "",
+
+            dp4: el.getAttribute("data-dp4") || "0",
+            dateDp4: el.getAttribute("data-datedp4") || "",
+
+            dp5: el.getAttribute("data-dp5") || "0",
+            dateDp5: el.getAttribute("data-datedp5") || "",
+          }
         };
       },
     });
@@ -58,19 +75,35 @@ export default function WaitingList({ data = [], onClick }: any) {
       note: item.note || "",
       status: item.status || "waiting_list",
       downpaymentProof: item.downpaymentProof || null,
+      statusDp: item.statusDp || "pending",
+
+      dp1: item.dp1 || "0",
+      dateDp1: item.dateDp1 || "",
+
+      dp2: item.dp2 || "0",
+      dateDp2: item.dateDp2 || "",
+
+      dp3: item.dp3 || "0",
+      dateDp3: item.dateDp3 || "",
+
+      dp4: item.dp4 || "0",
+      dateDp4: item.dateDp4 || "",
+
+      dp5: item.dp5 || "0",
+      dateDp5: item.dateDp5 || "",
 
 
-  category: item.category
-    ? typeof item.category === "object"
-      ? item.category
-      : { id: item.category }
-    : null,
+      category: item.category
+        ? typeof item.category === "object"
+          ? item.category
+          : { id: item.category }
+        : null,
 
-        tables: (item.tables || []).map((t: any) => ({
-    id: t.id,
-    number: t.number,
-    covers: t.covers,
-  })),
+      tables: (item.tables || []).map((t: any) => ({
+        id: t.id,
+        number: t.number,
+        covers: t.covers,
+      })),
 
       customer: {
         id: item.customerId || item.customer?.id || undefined,
@@ -134,6 +167,23 @@ export default function WaitingList({ data = [], onClick }: any) {
           data-note={item.note}
           data-status={item.status}
           data-dpreceipt={item.dpReceipt}
+          data-downpaymentproof={item.downpaymentProof}
+          data-statusdp={item.statusDp}
+
+          data-dp1={item.dp1}
+          data-datedp1={item.dateDp1}
+
+          data-dp2={item.dp2}
+          data-datedp2={item.dateDp2}
+
+          data-dp3={item.dp3}
+          data-datedp3={item.dateDp3}
+
+          data-dp4={item.dp4}
+          data-datedp4={item.dateDp4}
+
+          data-dp5={item.dp5}
+          data-datedp5={item.dateDp5}
           data-offset={item.endOffsetMinutes || 180}
           className="
           

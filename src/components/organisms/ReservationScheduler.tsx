@@ -289,9 +289,9 @@ export default function ReservationScheduler({
             slotMinTime={slotMinTime} // dari openHours
             slotMaxTime={slotMaxTime}
             nowIndicator
-            editable={canSave}
-            droppable={canSave}
-            selectable={canSave}
+            editable
+            droppable
+            selectable
             eventOverlap={false}
             slotEventOverlap={false}
             selectOverlap={false}

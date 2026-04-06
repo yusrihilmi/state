@@ -200,7 +200,7 @@ function Custom3Layout({
                 </a>
                 <p>{data.email}</p>
                 <p>{data.phone}</p>
-                <a href={data.website} className="text-primary hover:text-primary bg-white mt-4 py-1 px-2 rounded-md" target="_blank" rel="noopener noreferrer">Visit Us </a>
+                <a href={data.website} className=" text-white mt-4 py-1 px-0 rounded-md" target="_blank" rel="noopener noreferrer">{data.website}</a>
 
             </div>
         </>
@@ -311,7 +311,7 @@ function Custom2Layout({
                 </a>
                 <p>{data.email}</p>
                 <p>{data.phone}</p>
-                <a href={data.website} className="text-primary hover:text-primary bg-white mt-4 py-1 px-2 rounded-md" target="_blank" rel="noopener noreferrer">Visit Us </a>
+                <a href={data.website} className="text-white mt-4 py-1 px-0 rounded-md" target="_blank" rel="noopener noreferrer">{data.website} </a>
             </div>
 
             {/* FLOATING CALL US */}
@@ -404,20 +404,18 @@ function DefaultLayout({
 
                 <div className="pt-4">
                     <a
-                        href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(
-                            data.address
-                        )}`}
+                        href={data.address}
                         target="_blank"
                         rel="noopener noreferrer"
                         className="flex items-center p-0 gap-1 text-sm mt-1 hover:text-white text-white "
                     >
                         <p className="text-sm">
-                            {data.address} 📍
+                            {data.name} 📍
                         </p>
                     </a>
                     <p>{data.email}</p>
                     <p>{data.phone}</p>
-                    <a href={data.website} className="text-primary hover:text-primary bg-white mt-4 py-1 px-2 rounded-md" target="_blank" rel="noopener noreferrer">Visit Us </a>
+                    <a href={data.website} className="text-white mt-4 py-1 px-0 rounded-md" target="_blank" rel="noopener noreferrer">{data.website} </a>
                 </div>
             </div>
 

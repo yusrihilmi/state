@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import PromoModal from "../modal/PromoModal";
+import SpecialRequestModal from "../modal/SpecialRequestModal";
 import { usePromotionStore } from "../../stores/usePromotionStore";
 
 export default function PromotionTab() {
@@ -16,7 +17,9 @@ export default function PromotionTab() {
   const [modalOpen, setModalOpen] = useState(false);
   const [selected, setSelected] = useState<any>(null);
   const [deleteId, setDeleteId] = useState<number | null>(null);
-  const [role, setRole] = useState<number | null>(null);
+  const [specialRequestModalOpen, setSpecialRequestModalOpen] = useState(false);
+  const [canSave, setCanSave] = useState(false);
+  const [canSpecial, setCanSpecial] = useState(false);
 
   useEffect(() => {
     try {
@@ -24,9 +27,26 @@ export default function PromotionTab() {
       if (!raw) return;
 
       const parsed = JSON.parse(raw);
-      const userRole = parsed?.state?.user?.role;
+      const access = parsed?.state?.user?.access || [];
 
-      setRole(userRole);
+      // ✅ Promo → menu_id 10 → butuh edit
+      const hasCanSave = access.some(
+        (item: any) =>
+          item.menu_id === 10 &&
+          item.no_access === false &&
+          item.view_edit === true
+      );
+
+      // ✅ Special Request → menu_id 11 → cukup punya akses
+      const hasCanSpecial = access.some(
+        (item: any) =>
+          item.menu_id === 11 &&
+          item.no_access === false
+      );
+
+      setCanSave(hasCanSave);
+      setCanSpecial(hasCanSpecial);
+
     } catch (err) {
       console.error("Failed to parse auth-storage", err);
     }
@@ -42,15 +62,23 @@ export default function PromotionTab() {
 
   const DUMMY_IMAGE = "https://dummyimage.com/320x240/ccc/fff&text=No+Image";
 
-  const allowedRoles = [1, 2, 6];
-  const canSave = role !== null && allowedRoles.includes(role);
 
   return (
     <div className="p-4">
       {/* HEADER */}
-      <div className="flex justify-end mb-4">
+      <div className="flex justify-end mb-4 gap-4">
 
+        {/* ✅ Special Request */}
+        {canSpecial && (
+          <button
+            onClick={() => setSpecialRequestModalOpen(true)}
+            className="px-4 py-2 bg-yellow-500 text-white rounded-md hover:bg-yellow-600"
+          >
+            Special Request
+          </button>
+        )}
 
+        {/* ✅ Add Promo */}
         {canSave && (
           <button
             onClick={() => {
@@ -222,6 +250,10 @@ export default function PromotionTab() {
         open={modalOpen}
         data={selected}
         onClose={() => setModalOpen(false)}
+      />
+      <SpecialRequestModal
+        open={specialRequestModalOpen}
+        onClose={() => setSpecialRequestModalOpen(false)}
       />
     </div>
   );

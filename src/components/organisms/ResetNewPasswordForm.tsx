@@ -1,21 +1,27 @@
 import { useState } from "react";
+import { Link, useNavigate, useLocation } from "react-router-dom";
 import InputField from "../molecules/InputField";
 import Button from "../atoms/Button";
-import { useNavigate } from "react-router-dom";
-import { CheckCircle } from "lucide-react";
+import { toast } from "react-toastify";
+import { resetPasswordApi } from "../../api/authApi";
 
 export default function ResetNewPasswordForm() {
-  const [email] = useState("user@email.com");
+  const [otp, setOtp] = useState("");
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [error, setError] = useState("");
-  const [showPopup, setShowPopup] = useState(false);
-  const navigate = useNavigate();
+  const [loading, setLoading] = useState(false);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const navigate = useNavigate();
+  const location = useLocation();
+
+  // ✅ ambil email dari halaman sebelumnya
+  const email = location.state?.email;
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (!newPassword || !confirmPassword) {
+    if (!otp || !newPassword || !confirmPassword) {
       setError("Please fill in all fields");
       return;
     }
@@ -25,38 +31,52 @@ export default function ResetNewPasswordForm() {
       return;
     }
 
-    setError("");
-    setShowPopup(true);
-  };
+    if (!email) {
+      setError("Email tidak ditemukan, ulangi proses");
+      return;
+    }
 
-  const handleClosePopup = () => {
-    setShowPopup(false);
-    navigate("/login");
+    try {
+      setLoading(true);
+      setError("");
+
+      await resetPasswordApi({
+        otp,
+        email,
+        newPassword,
+        confirmPassword,
+      });
+
+      toast.success("Password berhasil direset!");
+
+      setTimeout(() => {
+        navigate("/state/office");
+      }, 1500);
+
+    } catch (err: any) {
+      setError(err.message || "Gagal reset password");
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
     <form onSubmit={handleSubmit} className="w-full max-w-sm">
-      <h2 className="text-2xl font-semibold mb-2">Reset Password</h2>
-      <p className="text-gray-500 mb-6">
-        Enter your new password below to reset your account.
+      <h2 className="text-2xl text-white font-semibold mb-2">
+        Reset Password
+      </h2>
+      <p className="text-white mb-6">
+        Masukkan OTP dan password baru kamu.
       </p>
 
-      <div className="relative mb-4">
-        <label htmlFor="email" className="block text-sm font-medium mb-1">
-          Email
-        </label>
-        <input
-          id="email"
-          type="email"
-          value={email}
-          readOnly
-          className="w-full border rounded-md p-2 pr-10 bg-gray-100 cursor-not-allowed text-gray-600"
-        />
-        <CheckCircle
-          size={20}
-          className="absolute right-3 top-9 text-green-500"
-        />
-      </div>
+      <InputField
+        label="Email"
+        id="email"
+        type="text"
+        value={email || ""}
+        readOnly
+        onChange={() => { }} // boleh kosong karena readonly
+      />
 
       <InputField
         label="New Password"
@@ -75,22 +95,27 @@ export default function ResetNewPasswordForm() {
         error={error}
       />
 
-      <Button type="submit" className="mt-4">
-        Reset Password
+      <InputField
+        label="OTP Code"
+        id="otp"
+        type="text"
+        value={otp}
+        onChange={(e) => setOtp(e.target.value)}
+      />
+
+      <Button type="submit" className="mt-4" disabled={loading}>
+        {loading ? "Processing..." : "Reset Password"}
       </Button>
 
-      {showPopup && (
-        <div className="fixed inset-0 flex items-center justify-center bg-black/50 z-50">
-          <div className="bg-white rounded-lg shadow-lg p-6 w-[90%] max-w-sm text-center">
-            <CheckCircle size={40} className="text-green-500 mx-auto mb-2" />
-            <h3 className="text-lg font-semibold mb-2">Password Reset Successful</h3>
-            <p className="text-gray-600 mb-4">
-              Your password has been updated successfully.
-            </p>
-            <Button onClick={handleClosePopup}>OK</Button>
-          </div>
-        </div>
-      )}
+      <p className="text-sm text-center mt-4 text-white">
+        Remember your password?{" "}
+        <Link
+          to="/state/office"
+          className="text-primary hover:underline font-medium"
+        >
+          Back to Login
+        </Link>
+      </p>
     </form>
   );
 }

@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useReservationStore } from "../../stores/useReservationStore";
+import { toast } from "react-toastify";
 import logoMillbook from "../../assets/logo-millbook.png";
 import bgImage from "../../assets/login-image.png";
 
@@ -119,9 +120,10 @@ export default function UserReservationConfirmationPage() {
         const result = await confirmReservation(finalPayload);
         if (result) {
             localStorage.setItem("reservation_step_6", JSON.stringify(result));
+    toast.success("Booking confirmed successfully!");
             navigate("/state/reservation/step-7");
         } else {
-            alert("Failed to confirm booking. Please try again.");
+            toast.error("Failed to confirm booking. Please try again.");
         }
     };
 

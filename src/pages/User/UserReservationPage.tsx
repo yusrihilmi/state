@@ -13,28 +13,62 @@ export default function UserReservationPage() {
         availableTimeSlots,
         fetchAvailableTableCategories,
         availableTableCategories,
+        fetchTableAvailability,
+        resetTableAvailability,
+        loadingTableAvailability,
+        tableAvailability
     } = useReservationStore();
 
     const [selectedDate, setSelectedDate] = useState<Date>(new Date());
     const [time, setTime] = useState<number | null>(null);
     const [selectedTableCategory, setSelectedTableCategory] = useState<number | null>(null);
     const [isRestoring, setIsRestoring] = useState(true);
+    const [guest, setGuest] = useState<number>(1);
+    const [customGuest, setCustomGuest] = useState<string>("");
 
 
     useEffect(() => {
-        if (time === null || !selectedDate) return;
 
-        const formattedDate = selectedDate.toISOString().split("T")[0];
-        const formattedTime = formatTime24(time);
-
-        fetchAvailableTableCategories(formattedDate, formattedTime);
+        fetchAvailableTableCategories();
 
         // Reset hanya kalau bukan dari restore
         if (!isRestoring) {
             setSelectedTableCategory(null);
         }
 
-    }, [time]);
+    }, []);
+
+
+
+    useEffect(() => {
+        const raw = localStorage.getItem("reservation_step_2");
+
+        if (!raw) return;
+
+        try {
+            const saved = JSON.parse(raw);
+
+            if (typeof saved.totalPax === "number") {
+                if (saved.totalPax > 10) {
+                    setCustomGuest(String(saved.totalPax));
+                    setGuest(1);
+                } else {
+                    setGuest(saved.totalPax);
+                    setCustomGuest("");
+                }
+            }
+        } catch (err) {
+            console.error("Failed to parse reservation_step_2", err);
+        }
+    }, []);
+
+
+    const guestOptions = Array.from({ length: 10 }, (_, i) => i + 1);
+
+    const totalGuest =
+        customGuest && Number(customGuest) > 10
+            ? Number(customGuest)
+            : guest;
 
     const convertToDecimal = (time24: string) => {
         const [hours, minutes] = time24.split(":").map(Number);
@@ -67,6 +101,21 @@ export default function UserReservationPage() {
             setTime(minTime);
         }
     }, [decimalSlots]);
+
+    useEffect(() => {
+        if (!selectedDate || time === null || !selectedTableCategory) return;
+
+        const formattedDate = selectedDate.toISOString().split("T")[0];
+        const formattedTime = formatTime24(time);
+
+        fetchTableAvailability(
+            formattedDate,
+            formattedTime,
+            totalGuest,
+            selectedTableCategory
+        );
+
+    }, [selectedDate, time, totalGuest, selectedTableCategory]);
 
     const getNearestSlot = (value: number) => {
         if (!decimalSlots.length) return value;
@@ -125,6 +174,19 @@ export default function UserReservationPage() {
 
         return gaps;
     }, [decimalSlots]);
+
+    
+    const tableState = useMemo(() => {
+        if (!tableAvailability.length) return "empty";
+
+        const item = tableAvailability[0]; // karena biasanya 1 category
+
+        if (item.closeOut && !item.available) return "closed";
+        if (!item.closeOut && item.available) return "available";
+        if (!item.closeOut && !item.available) return "waiting";
+
+        return "empty";
+    }, [tableAvailability]);
 
     const sliderBackground = useMemo(() => {
         if (!decimalSlots.length) return "";
@@ -270,10 +332,15 @@ export default function UserReservationPage() {
 
 
 
+    const canProceed = tableState === "available" || tableState === "waiting";
+
+
+
     const handleNext = () => {
+        resetTableAvailability();
         const formattedDate = formatDateLocal(selectedDate);
 
-        const payload = {
+        const payload1 = {
             date: formattedDate,
             time: formatTime24(time ?? minTime),
             timeBullet: time,
@@ -282,12 +349,63 @@ export default function UserReservationPage() {
             selectedMonth,
         };
 
+        const payload2 = {
+            date: formattedDate,
+            time: formatTime24(time ?? minTime),
+            timeBullet: time,
+            categoryId: selectedTableCategory,
+            selectedYear,
+            selectedMonth,
+            totalPax: totalGuest,
+        };
+
         localStorage.setItem(
             "reservation_step_1",
-            JSON.stringify(payload)
+            JSON.stringify(payload1)
         );
 
-        navigate("/state/reservation/step-2");
+        localStorage.setItem(
+            "reservation_step_2",
+            JSON.stringify(payload2)
+        );
+
+        navigate("/state/reservation/step-4");
+    };
+
+    const handleNextOrder = () => {
+        resetTableAvailability();
+        const formattedDate = formatDateLocal(selectedDate);
+
+        const payload1 = {
+            date: formattedDate,
+            time: formatTime24(time ?? minTime),
+            timeBullet: time,
+            categoryId: selectedTableCategory,
+            selectedYear,
+            selectedMonth,
+        };
+
+        const payload2 = {
+            date: formattedDate,
+            time: formatTime24(time ?? minTime),
+            timeBullet: time,
+            categoryId: selectedTableCategory,
+            selectedYear,
+            selectedMonth,
+            totalPax: totalGuest,
+        };
+
+        localStorage.setItem(
+            "reservation_step_1",
+            JSON.stringify(payload1)
+        );
+
+        localStorage.setItem(
+            "reservation_step_2",
+            JSON.stringify(payload2)
+        );
+
+        navigate("/state/reservation/step-3-order");
     };
 
 
@@ -465,6 +583,63 @@ export default function UserReservationPage() {
                         )}
                     </div>
 
+
+                    {/* ================= GUEST ================= */}
+                    <div className="mt-8 px-6">
+                        <p className="text-sm mb-4">How many Guests?</p>
+
+                        <div className="flex gap-3 overflow-x-auto pb-2 scrollbar-hide">
+                            {guestOptions.map((num) => {
+                                const isActive = !customGuest && guest === num;
+
+                                return (
+                                    <button
+                                        key={num}
+                                        onClick={() => {
+                                            setGuest(num);
+                                            setCustomGuest("");
+                                        }}
+                                        className={`
+            min-w-[60px] h-14 px-4 rounded-lg font-semibold flex-shrink-0
+            ${isActive ? "text-white" : "bg-white text-black border"}
+          `}
+                                        style={{
+                                            background: isActive ? "var(--color-primary)" : undefined,
+                                        }}
+                                    >
+                                        {num}
+                                    </button>
+                                );
+                            })}
+                        </div>
+                    </div>
+
+                    {/* ================= CUSTOM ================= */}
+                    <div className="mt-6 px-6">
+                        <p className="text-sm mb-2">Custom Guest Number</p>
+
+                        <input
+                            type="number"
+                            min={11}
+                            placeholder="More than 10"
+                            value={customGuest}
+                            onChange={(e) => setCustomGuest(e.target.value)}
+                            className="w-full text-center py-3 rounded-lg !bg-white text-black font-semibold outline-none"
+                        />
+                    </div>
+
+                    {/* ================= TOTAL ================= */}
+                    <div className="mt-6 px-6 hidden">
+                        <p className="text-sm mb-2">Total Guest</p>
+
+                        <div
+                            className="bg-white rounded-xl py-4 text-center font-semibold text-lg"
+                            style={{ color: "var(--color-primary)" }}
+                        >
+                            {totalGuest} Guests
+                        </div>
+                    </div>
+
                     {/* ================= TABLE CATEGORY ================= */}
                     <div className="mt-6 px-6">
                         <p className="text-sm mb-3">Table Category</p>
@@ -509,6 +684,78 @@ export default function UserReservationPage() {
                         )}
                     </div>
 
+                    {/* ================= TABLE AVAILABILITY INFO ================= */}
+                    <div className="mt-4 px-6">
+                        {/* LOADING */}
+                        {loadingTableAvailability && (
+                            <div className="rounded-xl p-4 text-sm bg-gray-500 text-white animate-pulse">
+                                Checking table availability...
+                            </div>
+                        )}
+
+                        {/* DATA */}
+                        {!loadingTableAvailability &&
+                            tableAvailability.length > 0 &&
+                            tableAvailability.map((item, idx) => (
+                                <div
+                                    key={idx}
+                                    className="rounded-xl p-4 text-sm"
+                                    style={{
+                                        background:
+                                            item.closeOut && !item.available
+                                                ? "#6b7280" // abu (closed)
+                                                : item.available
+                                                    ? "#16a34a" // hijau
+                                                    : "#f59e0b", // kuning (waiting)
+
+                                        color: "white"
+                                    }}
+                                >
+                                    <p className="font-semibold mb-1">
+                                        {item.categoryName}
+                                    </p>
+
+                                    <p>
+                                        {item.closeOut && !item.available && "Not Available"}
+
+                                        {!item.closeOut && item.available &&
+                                            `Available (Max Pax: ${item.availablePax})`}
+
+                                        {!item.closeOut && !item.available &&
+                                            "Full booked - You will be added to waiting list"}
+                                    </p>
+
+                                    <p>
+                                        {item.closeOut && !item.available && "Closest Available Time"}
+                                    </p>
+
+                                    
+                                    <p>
+                                        {!item.closeOut && !item.available && "Closest Available Time"}
+                                    </p>
+
+                                    {!item.available && item.alternativeText && (
+                                        <ul className="mt-2 text-xs opacity-90 list-disc pl-4 space-y-1">
+                                            {item.alternativeText
+                                                .split("|")
+                                                .map((alt: string, i: number) => (
+                                                    <li key={i}>{alt.trim()}</li>
+                                                ))}
+                                        </ul>
+                                    )}
+                                </div>
+                            ))}
+
+                        {/* EMPTY */}
+                        {!loadingTableAvailability &&
+                            tableAvailability.length === 0 &&
+                            selectedTableCategory && (
+                                <div className="rounded-xl p-4 text-sm bg-gray-400 text-white">
+                                    No availability data
+                                </div>
+                            )}
+                    </div>
+
                     {/* ================= SUMMARY ================= */}
                     <div className="mt-6 px-6">
                         <p className="text-sm mb-2">Booking Date & Time</p>
@@ -528,9 +775,17 @@ export default function UserReservationPage() {
 
                     {/* ================= ACTION ================= */}
                     <div className="px-6 mt-6 space-y-3 pb-10">
+
+                        <button
+                            onClick={handleNextOrder}
+                            disabled={!selectedTableCategory || !canProceed}
+                            className="w-full py-3 rounded-lg font-semibold transition-all border hover:text-primary hover:border-primary border-primary text-primary bg-white disabled:opacity-50 disabled:cursor-not-allowed"
+                        >
+                            Order Menu Now
+                        </button>
                         <button
                             onClick={handleNext}
-                            disabled={!selectedTableCategory}
+                            disabled={!selectedTableCategory || !canProceed}
                             className="w-full py-3 rounded-lg font-semibold text-white disabled:opacity-50 disabled:cursor-not-allowed"
                             style={{ background: "var(--color-primary)" }}
                         >
@@ -540,6 +795,7 @@ export default function UserReservationPage() {
                             onClick={() => {
                                 localStorage.removeItem("reservation_step_1");
                                 navigate("/state/reservation");
+                                resetTableAvailability();
                             }}
                             className="w-full py-3 rounded-lg bg-gray-300 text-gray-700 hover:text-gray-700"
                         >

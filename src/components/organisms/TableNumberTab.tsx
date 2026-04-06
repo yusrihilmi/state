@@ -16,6 +16,29 @@ export default function TableNumberTab() {
   const [modalOpen, setModalOpen] = useState(false);
   const [selected, setSelected] = useState<any>(null);
   const [deleteId, setDeleteId] = useState<number | null>(null);
+  const [canSave, setCanSave] = useState(false);
+
+  useEffect(() => {
+    try {
+      const raw = localStorage.getItem("auth-storage");
+      if (!raw) return;
+
+      const parsed = JSON.parse(raw);
+      const access = parsed?.state?.user?.access || [];
+
+      const hasPermission = access.some(
+        (item: any) =>
+          item.menu_id === 9 &&
+          item.no_access === false &&
+          item.view_edit === true
+      );
+
+      setCanSave(hasPermission);
+
+    } catch (err) {
+      console.error("Failed to parse auth-storage", err);
+    }
+  }, []);
 
 
   useEffect(() => {
@@ -30,11 +53,16 @@ export default function TableNumberTab() {
       <div className="flex justify-between mb-4">
         <h2 className="text-lg font-semibold">Table Number</h2>
         <button
+          disabled={!canSave}
           onClick={() => {
+            if (!canSave) return;
             setSelected(null);
             setModalOpen(true);
           }}
-          className="px-4 py-2 bg-primary text-white rounded-md text-sm"
+          className={`px-4 py-2 rounded-md text-sm ${canSave
+              ? "bg-primary text-white"
+              : "bg-gray-300 text-gray-500 cursor-not-allowed"
+            }`}
         >
           + Add Number
         </button>
@@ -77,17 +105,26 @@ export default function TableNumberTab() {
                   <td className="p-3">{item.category.name}</td>
                   <td className="p-3 flex gap-3">
                     <button
+                      disabled={!canSave}
                       onClick={() => {
+                        if (!canSave) return;
                         setSelected(item);
                         setModalOpen(true);
                       }}
-                      className="text-primary text-sm"
+                      className={`text-sm ${canSave ? "text-primary" : "text-gray-400 cursor-not-allowed"
+                        }`}
                     >
                       Edit
                     </button>
+
                     <button
-                      onClick={() => setDeleteId(item.id)}
-                      className="text-red-500 text-sm"
+                      disabled={!canSave}
+                      onClick={() => {
+                        if (!canSave) return;
+                        setDeleteId(item.id);
+                      }}
+                      className={`text-sm ${canSave ? "text-red-500" : "text-gray-400 cursor-not-allowed"
+                        }`}
                     >
                       Delete
                     </button>

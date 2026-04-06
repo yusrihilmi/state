@@ -2,8 +2,9 @@ interface InputProps {
   id: string;
   type?: string;
   value: string;
-  onChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
+  onChange?: (e: React.ChangeEvent<HTMLInputElement>) => void;
   className?: string;
+  readOnly?: boolean; // ✅ tambahin
 }
 
 export default function Input({
@@ -12,6 +13,7 @@ export default function Input({
   value,
   onChange,
   className = "",
+  readOnly,
 }: InputProps) {
   return (
     <input
@@ -19,7 +21,8 @@ export default function Input({
       type={type}
       value={value}
       onChange={onChange}
-      className={`w-full px-3 !bg-transparent ${className}`}
+      readOnly={readOnly} // ✅ ini inti nya
+      className={`w-full px-3 !bg-transparent h-10 ${className}`}
     />
   );
 }

@@ -3,6 +3,7 @@ import { useReservationStore } from "./stores/useReservationStore";
 import { useEffect } from "react";
 import { useAuthStore } from "./stores/useAuthStore";
 import LoginPage from "./pages/LoginPage";
+import ResetPasswordPage from "./pages/ResetPasswordPage";
 import ReservationCalendar from "./pages/ReservationCalendar";
 import DashboardSummary from "./pages/DashboardSummary";
 import MenuManagement from "./pages/MenuManagement";
@@ -12,6 +13,7 @@ import RestaurantSettings from "./pages/RestaurantSettings";
 import CustomerData from "./pages/CustomerData";
 import TableManagement from "./pages/TableManagement";
 import RolesManagement from "./pages/RolesManagement";
+import UserManagement from "./pages/UserManagement";
 
 import UserHomePage from "./pages/User/UserHomePage";
 import UserReservationPage from "./pages/User/UserReservationPage";
@@ -28,28 +30,40 @@ import "react-toastify/dist/ReactToastify.css";
 
 function PrivateRoute({
   children,
-  allowedRoles,
+  menuId,
 }: {
   children: React.ReactNode;
-  allowedRoles?: number[];
+  menuId: number;
 }) {
   const user = useAuthStore((state) => state.user);
 
   if (!user) {
-    return <Navigate to="/state/admin" replace />;
+    return <Navigate to="/state/office" replace />;
   }
 
-  // kalau ada allowedRoles → cek role
-  if (allowedRoles && !allowedRoles.includes(user.role)) {
-    if ([1, 2, 3, 6].includes(user.role)) {
-      return <Navigate to="/state/admin/reservation-calendar" replace />;
+  const hasAccess = user.access?.some(
+    (item) => item.menu_id === menuId && item.no_access === false
+  );
+
+  if (!hasAccess) {
+    // fallback redirect (prioritas menu 2 → 3)
+    const canReservation = user.access?.some(
+      (item) => item.menu_id === 2 && item.no_access === false
+    );
+
+    const canBooking = user.access?.some(
+      (item) => item.menu_id === 3 && item.no_access === false
+    );
+
+    if (canReservation) {
+      return <Navigate to="/state/office/reservation-calendar" replace />;
     }
 
-    if ([4, 5].includes(user.role)) {
-      return <Navigate to="/state/admin/booking-management" replace />;
+    if (canBooking) {
+      return <Navigate to="/state/office/booking-management" replace />;
     }
 
-    return <Navigate to="/state/admin" replace />;
+    return <Navigate to="/state/office" replace />;
   }
 
   return <>{children}</>;
@@ -112,87 +126,105 @@ export default function App() {
         <Route path="/state/reservation/step-7" element={<UserReservationBookingConfirmPage />} />
         <Route path="/state/reservation/search" element={<UserReservationBookingSearch />} />
 
-        <Route path="/state/admin" element={<LoginPage />} />
+        <Route path="/state/office" element={<LoginPage />} />
+        <Route path="/state/office/reset-password" element={<ResetPasswordPage />} />
 
         {/* PRIVATE */}
         <Route
-          path="/state/admin/dashboard-summary"
+          path="/state/office/dashboard-summary"
           element={
-            <PrivateRoute allowedRoles={[1, 2, 6]}>
+            <PrivateRoute menuId={1}>
               <DashboardSummary />
             </PrivateRoute>
           }
         />
+
         <Route
-          path="/state/admin/reservation-calendar"
+          path="/state/office/reservation-calendar"
           element={
-            <PrivateRoute allowedRoles={[1, 2, 3, 6]}>
-              <ReservationCalendar />
-            </PrivateRoute>
-          }
-        />
-        <Route
-          path="/state/admin/reservation-calendar/:bookingCode"
-          element={
-            <PrivateRoute allowedRoles={[1, 2, 3, 6]}>
+            <PrivateRoute menuId={2}>
               <ReservationCalendar />
             </PrivateRoute>
           }
         />
 
         <Route
-          path="/state/admin/booking-management"
+          path="/state/office/reservation-calendar/:bookingCode"
           element={
-            <PrivateRoute allowedRoles={[1, 2, 3, 4, 5, 6]}>
+            <PrivateRoute menuId={2}>
+              <ReservationCalendar />
+            </PrivateRoute>
+          }
+        />
+
+        <Route
+          path="/state/office/booking-management"
+          element={
+            <PrivateRoute menuId={3}>
               <BookingManagement />
             </PrivateRoute>
           }
         />
+
         <Route
-          path="/state/admin/menu-management"
+          path="/state/office/menu-management"
           element={
-            <PrivateRoute allowedRoles={[1, 2, 6]}>
+            <PrivateRoute menuId={8}>
               <MenuManagement />
             </PrivateRoute>
           }
         />
+
         <Route
-          path="/state/admin/table-management"
+          path="/state/office/table-management"
           element={
-            <PrivateRoute allowedRoles={[1, 2, 6]}>
+            <PrivateRoute menuId={9}>
               <TableManagement />
             </PrivateRoute>
           }
         />
+
         <Route
-          path="/state/admin/promotion"
+          path="/state/office/promotion"
           element={
-            <PrivateRoute allowedRoles={[1, 2, 3, 4, 6]}>
+            <PrivateRoute menuId={10}>
               <Promotion />
             </PrivateRoute>
           }
         />
+
         <Route
-          path="/state/admin/restaurant-settings"
+          path="/state/office/customer-data"
           element={
-            <PrivateRoute allowedRoles={[1]}>
-              <RestaurantSettings />
-            </PrivateRoute>
-          }
-        />
-        <Route
-          path="/state/admin/customer-data"
-          element={
-            <PrivateRoute allowedRoles={[1, 2, 5, 6]}>
+            <PrivateRoute menuId={12}>
               <CustomerData />
             </PrivateRoute>
           }
         />
+
         <Route
-          path="/state/admin/roles-management"
+          path="/state/office/roles-management"
           element={
-            <PrivateRoute allowedRoles={[1]}>
+            <PrivateRoute menuId={13}>
               <RolesManagement />
+            </PrivateRoute>
+          }
+        />
+
+        <Route
+          path="/state/office/user-management"
+          element={
+            <PrivateRoute menuId={14}>
+              <UserManagement />
+            </PrivateRoute>
+          }
+        />
+
+        <Route
+          path="/state/office/restaurant-settings"
+          element={
+            <PrivateRoute menuId={15}>
+              <RestaurantSettings />
             </PrivateRoute>
           }
         />

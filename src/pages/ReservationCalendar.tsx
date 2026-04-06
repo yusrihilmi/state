@@ -36,25 +36,41 @@ export default function ReservationCalendar() {
 
   const [closeOutModalOpen, setCloseOutModalOpen] = useState(false);
   const [selectedCloseOut, setSelectedCloseOut] = useState<any>(null);
-    const [role, setRole] = useState<number | null>(null);
+  const [canSave, setCanSave] = useState(false);
+  const [canSaveClosed, setCanSaveClosed] = useState(false);
+  
+  useEffect(() => {
+    try {
+      const raw = localStorage.getItem("auth-storage");
+      if (!raw) return;
 
-    useEffect(() => {
-        try {
-            const raw = localStorage.getItem("auth-storage");
-            if (!raw) return;
+      const parsed = JSON.parse(raw);
+      const access = parsed?.state?.user?.access || [];
 
-            const parsed = JSON.parse(raw);
-            const userRole = parsed?.state?.user?.role;
+      const canSave = access.some(
+        (item: any) =>
+          item.menu_id === 2 &&
+          item.no_access === false &&
+          item.view_edit === true
+      );
 
-            setRole(userRole);
-        } catch (err) {
-            console.error("Failed to parse auth-storage", err);
-        }
-    }, []);
+      // ✅ menu_id 4 → Fungsi Close Out → cukup no_access false
+      const canSaveClosed = access.some(
+        (item: any) =>
+          item.menu_id === 4 &&
+          item.no_access === false
+      );
 
-    
-  const allowedRoles = [1, 2, 3];
-  const canSave = role !== null && allowedRoles.includes(role);
+      setCanSave(canSave);
+      setCanSaveClosed(canSaveClosed);
+
+    } catch (err) {
+      console.error("Failed to parse auth-storage", err);
+    }
+  }, []);
+
+
+
 
   const { bookingCode } = useParams();
 
@@ -234,7 +250,7 @@ export default function ReservationCalendar() {
         let dpIcon = "";
 
         if (b.needDp) {
-          if (b.downpaymentProof) {
+          if (b.statusDp === "completed") {
             dpIcon = "paid";
           } else {
             dpIcon = "unpaid";
@@ -269,6 +285,19 @@ export default function ReservationCalendar() {
             status: b.status,
             totalPax: b.totalPax,
             dpStatus: dpIcon,
+            downpaymentProof: b.downpaymentProof,
+            statusDp: b.statusDp,
+            totalDp: b.totalDp,
+            dp1: b.dp1,
+            dateDp1: b.dateDp1,
+            dp2: b.dp2,
+            dateDp2: b.dateDp2,
+            dp3: b.dp3,
+            dateDp3: b.dateDp3,
+            dp4: b.dp4,
+            dateDp4: b.dateDp4,
+            dp5: b.dp5,
+            dateDp5: b.dateDp5,
           },
         };
       }) || [];
@@ -398,26 +427,23 @@ export default function ReservationCalendar() {
               >
                 Walk In
               </button>
-              <button
-                onClick={() => {
-                  setSelectedCloseOut(null);
-                  setCloseOutModalOpen(true);
-                }}
-                className="px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600"
-              >
-                Close Out
-              </button>
+              {canSaveClosed && (
+
+                <button
+                  onClick={() => {
+                    setSelectedCloseOut(null);
+                    setCloseOutModalOpen(true);
+                  }}
+                  className="px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600"
+                >
+                  Close Out
+                </button>
+              )}
               <button
                 onClick={() => setNewsModalOpen(true)}
                 className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600"
               >
                 News Today
-              </button>
-              <button
-                onClick={() => setSpecialRequestModalOpen(true)}
-                className="px-4 py-2 bg-yellow-500 text-white rounded-lg hover:bg-yellow-600"
-              >
-                Special Request
               </button>
             </div>
 
@@ -439,20 +465,25 @@ export default function ReservationCalendar() {
                     (b: any) => b.id === data.bookingId
                   );
 
-                  setSelectedData(booking);
+                  const mergedData = {
+                    ...booking,
+                    ...data.extendedProps, // 🔥 override kalau ada
+                  };
+
+                  setSelectedData(mergedData);
                   setModalOpen(true);
                 }}
                 onDropFromWaiting={(data) => {
-  if (!canSave) {
-    toast.error("No permission");
-    return;
-  }
+                  if (!canSave) {
+                    toast.error("No permission");
+                    return;
+                  }
 
-  setSelectedData(data);
-  setModalOpen(true);
-}}
+                  setSelectedData(data);
+                  setModalOpen(true);
+                }}
 
-  canSave={canSave}
+                canSave={canSave}
               />
             </div>
           </div>

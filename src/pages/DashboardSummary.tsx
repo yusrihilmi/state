@@ -67,7 +67,13 @@ export default function DashboardSummary() {
   );
 
   // 🔥 LINE CHART DATA
-  const bookingsByTimeData = bookingsByTime || [];
+  const bookingsByTimeData = (bookingsByTime || []).map((item: any) => ({
+    date: item.date,
+    morning: item.morning || 0,
+    afternoon: item.afternoon || 0,
+    evening: item.evening || 0,
+    night: item.night || 0,
+  }));
 
   const renderPercentLabel = ({
     cx,
@@ -248,34 +254,55 @@ export default function DashboardSummary() {
                           <Tooltip />
 
                           {/* 🔥 LEGEND */}
-                          <Legend />
+                          <Legend
+                            content={() => (
+                              <div className="flex gap-4 text-sm justify-center">
+                                <span className="flex items-center gap-1">
+                                  <span className="w-3 h-3 bg-[#facc15] inline-block rounded-sm" />
+                                  Morning
+                                </span>
+                                <span className="flex items-center gap-1">
+                                  <span className="w-3 h-3 bg-[#3b82f6] inline-block rounded-sm" />
+                                  Afternoon
+                                </span>
+                                <span className="flex items-center gap-1">
+                                  <span className="w-3 h-3 bg-[#10b981] inline-block rounded-sm" />
+                                  Evening
+                                </span>
+                                <span className="flex items-center gap-1">
+                                  <span className="w-3 h-3 bg-[#6366f1] inline-block rounded-sm" />
+                                  Night
+                                </span>
+                              </div>
+                            )}
+                          />
 
                           <Line
                             type="monotone"
                             dataKey="morning"
+                            name="Morning"
                             stroke="#facc15"
-                            strokeWidth={2}
                           />
 
                           <Line
                             type="monotone"
                             dataKey="afternoon"
+                            name="Afternoon"
                             stroke="#3b82f6"
-                            strokeWidth={2}
                           />
 
                           <Line
                             type="monotone"
                             dataKey="evening"
+                            name="Evening"
                             stroke="#10b981"
-                            strokeWidth={2}
                           />
 
                           <Line
                             type="monotone"
                             dataKey="night"
+                            name="Night"
                             stroke="#6366f1"
-                            strokeWidth={2}
                           />
                         </LineChart>
                       </ResponsiveContainer>

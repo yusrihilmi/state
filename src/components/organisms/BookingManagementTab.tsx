@@ -32,7 +32,9 @@ export default function BookingManagementTab() {
   const [newsModalOpen, setNewsModalOpen] = useState(false);
   const [closeOutModalOpen, setCloseOutModalOpen] = useState(false);
   const [selectedCloseOut, setSelectedCloseOut] = useState<any>(null);
-  const [role, setRole] = useState<number | null>(null);
+  const [canSave, setCanSave] = useState(false);
+  const [canClose, setCanClose] = useState(false);
+  const [canNews, setCanNews] = useState(false);
 
   useEffect(() => {
     try {
@@ -40,13 +42,52 @@ export default function BookingManagementTab() {
       if (!raw) return;
 
       const parsed = JSON.parse(raw);
-      const userRole = parsed?.state?.user?.role;
+      const access = parsed?.state?.user?.access || [];
 
-      setRole(userRole);
+      // 🔥 cek dulu menu_id 2 (Reservation Calendar)
+      const reservationAccess = access.find(
+        (item: any) => item.menu_id === 2
+      );
+
+      const isReservationNoAccess = reservationAccess?.no_access === true;
+
+      // ✅ menu_id 3 → Booking → butuh view_edit
+      const hasCanSave = access.some(
+        (item: any) =>
+          item.menu_id === 3 &&
+          item.no_access === false &&
+          item.view_edit === true
+      );
+
+      let hasCanClose = false;
+      let hasCanNews = false;
+
+      // 🔥 hanya cek kalau menu_id 2 NO ACCESS
+      if (isReservationNoAccess) {
+        // ✅ menu_id 4 → Close Out
+        hasCanClose = access.some(
+          (item: any) =>
+            item.menu_id === 4 &&
+            item.no_access === false
+        );
+
+        // ✅ menu_id 5 → News Today
+        hasCanNews = access.some(
+          (item: any) =>
+            item.menu_id === 5 &&
+            item.no_access === false
+        );
+      }
+
+      setCanSave(hasCanSave);
+      setCanClose(hasCanClose);
+      setCanNews(hasCanNews);
+
     } catch (err) {
       console.error("Failed to parse auth-storage", err);
     }
   }, []);
+
 
   /* ================= FETCH ================= */
   useEffect(() => {
@@ -126,14 +167,6 @@ export default function BookingManagementTab() {
       alert("Failed to export Excel");
     }
   };
-
-
-  const allowedRoles = [1, 2, 3];
-  const allowedRolesClose = [5];
-  const allowedRolesNews = [4, 5];
-  const canSave = role !== null && allowedRoles.includes(role);
-  const canClose = role !== null && allowedRolesClose.includes(role);
-  const canNews = role !== null && allowedRolesNews.includes(role);
 
   return (
     <div className="p-4">
@@ -269,11 +302,11 @@ export default function BookingManagementTab() {
 
 
             <button
-              
-                onClick={() => {
-                  setSelectedCloseOut(null);
-                  setCloseOutModalOpen(true);
-                }}
+
+              onClick={() => {
+                setSelectedCloseOut(null);
+                setCloseOutModalOpen(true);
+              }}
               className="px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600"
             >
               Close Out
@@ -385,14 +418,14 @@ export default function BookingManagementTab() {
         open={newsModalOpen}
         onClose={() => setNewsModalOpen(false)}
       />
-      
-                <CloseOutModal
-                  open={closeOutModalOpen}
-                  data={selectedCloseOut}
-                  onClose={() => {
-                    setCloseOutModalOpen(false); // refresh calendar
-                  }}
-                />
+
+      <CloseOutModal
+        open={closeOutModalOpen}
+        data={selectedCloseOut}
+        onClose={() => {
+          setCloseOutModalOpen(false); // refresh calendar
+        }}
+      />
     </div>
   );
 }

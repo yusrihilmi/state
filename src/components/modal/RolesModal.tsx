@@ -1,42 +1,107 @@
 import { useEffect, useState } from "react";
-import { useRoleManagementStore } from "../../stores/useRoleManagementStore";
+import { useAclManagementStore } from "../../stores/useAclManagementStore";
 
 export default function RolesModal({ open, data, onClose }: any) {
-  const { createRole, updateRole } = useRoleManagementStore();
+  const {
+    createRole,
+    updateRole,
+    defaults,
+    fetchRolesDefault,
+  } = useAclManagementStore();
 
-  const [username, setUsername] = useState("");
-  const [fullname, setFullname] = useState("");
-  const [password, setPassword] = useState("");
-  const [role, setRole] = useState<number>(1);
+  const [name, setName] = useState("");
+  const [roleDefault, setRoleDefault] = useState<number>(0);
+  const [menus, setMenus] = useState<any[]>([]);
+  const [isEdit, setIsEdit] = useState(false);
 
+  /* ================= INIT ================= */
   useEffect(() => {
-    if (data) {
-      setUsername(data.username || "");
-      setFullname(data.fullname || "");
-      setPassword("");
-      setRole(data.role ?? 1);
-    } else {
-      resetForm();
-    }
-  }, [data, open]);
+    fetchRolesDefault();
+  }, []);
 
-  const resetForm = () => {
-    setUsername("");
-    setFullname("");
-    setPassword("");
-    setRole(1);
-  };
+  /* ================= HANDLE OPEN ================= */
+  useEffect(() => {
+    if (!open) return;
+
+    if (data) {
+      // 🔥 EDIT MODE
+      setIsEdit(true);
+      setName(data.name || "");
+      setRoleDefault(data.roleIdDefault || 0);
+
+      const mappedMenus = data.menuRoles.map((m: any) => ({
+        menuId: m.menuId,
+        name: m.menu.name,
+        viewOnly: m.viewOnly,
+        viewEdit: m.viewEdit,
+        noAccess: m.noAccess,
+      }));
+
+      setMenus(mappedMenus);
+    } else {
+      // 🔥 CREATE MODE
+      setIsEdit(false);
+      setName("");
+      setRoleDefault(0);
+      setMenus([]);
+    }
+  }, [open, data]);
+
+  /* ================= APPLY DEFAULT ROLE ================= */
+  useEffect(() => {
+    // ❗ jangan override kalau edit
+    if (isEdit) return;
+    if (!roleDefault) return;
+    if (!defaults.length) return;
+
+    const selectedRole = defaults.find((d) => d.id === roleDefault);
+    if (!selectedRole) return;
+
+    const mappedMenus = selectedRole.menuRoles.map((m: any) => ({
+      menuId: m.menuId,
+      name: m.menu.name,
+      viewOnly: m.viewOnly,
+      viewEdit: m.viewEdit,
+      noAccess: m.noAccess,
+    }));
+
+    setMenus(mappedMenus);
+  }, [roleDefault, defaults, isEdit]);
 
   if (!open) return null;
 
+  /* ================= HANDLE CHECKBOX ================= */
+  const handlePermissionChange = (
+    menuId: number,
+    type: "viewOnly" | "viewEdit" | "noAccess"
+  ) => {
+    setMenus((prev) =>
+      prev.map((m) =>
+        m.menuId === menuId
+          ? {
+              ...m,
+              viewOnly: type === "viewOnly",
+              viewEdit: type === "viewEdit",
+              noAccess: type === "noAccess",
+            }
+          : m
+      )
+    );
+  };
+
+  /* ================= SAVE ================= */
   const handleSave = async () => {
-    if (!username || !fullname) return;
+    if (!name) return;
 
     const payload = {
-      username,
-      fullname,
-      password,
-      role,
+      name,
+      roleIdDefault: roleDefault,
+      menus: menus.map((m) => ({
+        menuId: m.menuId,
+        viewOnly: m.viewOnly,
+        viewEdit: m.viewEdit,
+        noAccess: m.noAccess,
+      })),
     };
 
     if (data?.id) {
@@ -46,71 +111,101 @@ export default function RolesModal({ open, data, onClose }: any) {
     }
 
     onClose();
-    resetForm();
   };
 
   return (
     <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50">
-      <div className="bg-white w-[400px] rounded-lg p-5">
+      <div className="bg-white w-[750px] rounded-lg p-5">
         <h3 className="font-semibold mb-4">
-          {data ? "Edit User Roles" : "Add User Roles"}
+          {data ? "Edit Role" : "Add Role"}
         </h3>
 
+        {/* ================= FORM ================= */}
         <div className="space-y-4">
           <div>
             <label className="text-sm text-gray-600 block mb-1">
-              Username
+              Role Name
             </label>
             <input
-              value={username}
-              onChange={(e) => setUsername(e.target.value)}
+              value={name}
+              onChange={(e) => setName(e.target.value)}
               className="w-full border rounded px-3 py-2 text-sm"
             />
           </div>
 
           <div>
             <label className="text-sm text-gray-600 block mb-1">
-              Fullname
-            </label>
-            <input
-              value={fullname}
-              onChange={(e) => setFullname(e.target.value)}
-              className="w-full border rounded px-3 py-2 text-sm"
-            />
-          </div>
-
-          <div>
-            <label className="text-sm text-gray-600 block mb-1">
-              Password
-            </label>
-            <input
-              type="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              placeholder={data ? "Leave blank to keep" : ""}
-              className="w-full border rounded px-3 py-2 text-sm"
-            />
-          </div>
-
-          <div>
-            <label className="text-sm text-gray-600 block mb-1">
-              Role
+              Role Default
             </label>
             <select
-              value={role}
-              onChange={(e) => setRole(Number(e.target.value))}
+              value={roleDefault}
+              onChange={(e) => {
+                setRoleDefault(Number(e.target.value));
+              }}
               className="w-full border rounded px-3 py-2 text-sm"
             >
-              <option value={1}>Super Admin</option>
-              <option value={2}>Manager</option>
-              <option value={3}>GRO (Guest Relation Officer)</option>
-              <option value={4}>Cashier</option>
-              <option value={5}>Accounting</option>
-              <option value={6}>Marketing</option>
+              <option value={0}>-- Select Role --</option>
+              {defaults.map((d) => (
+                <option key={d.id} value={d.id}>
+                  {d.name}
+                </option>
+              ))}
             </select>
           </div>
         </div>
 
+        {/* ================= PERMISSIONS ================= */}
+        <div className="mt-6 overflow-y-auto h-72">
+          <table className="w-full text-sm border">
+            <thead>
+              <tr className="bg-gray-100">
+                <th className="p-2 text-left">Menu</th>
+                <th className="p-2">View Only</th>
+                <th className="p-2">View Edit</th>
+                <th className="p-2">No Access</th>
+              </tr>
+            </thead>
+            <tbody>
+              {menus.map((m) => (
+                <tr key={m.menuId} className="border-t">
+                  <td className="p-2">{m.name}</td>
+
+                  <td className="text-center">
+                    <input
+                      type="checkbox"
+                      checked={m.viewOnly}
+                      onChange={() =>
+                        handlePermissionChange(m.menuId, "viewOnly")
+                      }
+                    />
+                  </td>
+
+                  <td className="text-center">
+                    <input
+                      type="checkbox"
+                      checked={m.viewEdit}
+                      onChange={() =>
+                        handlePermissionChange(m.menuId, "viewEdit")
+                      }
+                    />
+                  </td>
+
+                  <td className="text-center">
+                    <input
+                      type="checkbox"
+                      checked={m.noAccess}
+                      onChange={() =>
+                        handlePermissionChange(m.menuId, "noAccess")
+                      }
+                    />
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+
+        {/* ================= ACTION ================= */}
         <div className="flex justify-end gap-2 mt-6">
           <button
             onClick={onClose}
@@ -118,6 +213,7 @@ export default function RolesModal({ open, data, onClose }: any) {
           >
             Cancel
           </button>
+
           <button
             onClick={handleSave}
             className="px-4 py-2 bg-primary text-white rounded-md text-sm"

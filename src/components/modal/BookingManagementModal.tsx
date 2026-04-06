@@ -34,9 +34,17 @@ export default function BookingManagementModal({ open, data, onClose }: any) {
   const dropdownRef = useRef<HTMLDivElement>(null);
   const [selectedTables, setSelectedTables] = useState<any[]>([]); // array of table objects
   const [needDp, setNeedDp] = useState(false);
-  const [dpAmounts, setDpAmounts] = useState([
-    "", "", "", "", ""
+  const [dpAmounts, setDpAmounts] = useState<
+    { amount: string; date: string }[]
+  >([
+    { amount: "", date: "" },
+    { amount: "", date: "" },
+    { amount: "", date: "" },
+    { amount: "", date: "" },
+    { amount: "", date: "" },
   ]);
+  const [isDpLocked, setIsDpLocked] = useState(false);
+  const [confirmModalOpen, setConfirmModalOpen] = useState(false);
 
   const [isDpCompleted, setIsDpCompleted] = useState(false);
 
@@ -61,7 +69,8 @@ export default function BookingManagementModal({ open, data, onClose }: any) {
     downpaymentProof: "",
   });
   const [selectedCategoryId, setSelectedCategoryId] = useState<number | null>(null);
-  const [role, setRole] = useState<number | null>(null);
+  const [canSave, setCanSave] = useState(false);
+  const [canSaveDp, setCanSaveDp] = useState(false);
 
   useEffect(() => {
     try {
@@ -69,19 +78,31 @@ export default function BookingManagementModal({ open, data, onClose }: any) {
       if (!raw) return;
 
       const parsed = JSON.parse(raw);
-      const userRole = parsed?.state?.user?.role;
+      const access = parsed?.state?.user?.access || [];
 
-      setRole(userRole);
+      // ✅ menu_id 3 → Booking Management
+      const hasCanSave = access.some(
+        (item: any) =>
+          item.menu_id === 3 &&
+          item.no_access === false &&
+          item.view_edit === true
+      );
+
+      // ✅ menu_id 6 atau 7 → DP
+      const hasCanSaveDp = access.some(
+        (item: any) =>
+          (item.menu_id === 6 || item.menu_id === 7) &&
+          item.no_access === false &&
+          item.view_edit === true
+      );
+
+      setCanSave(hasCanSave);
+      setCanSaveDp(hasCanSaveDp);
+
     } catch (err) {
       console.error("Failed to parse auth-storage", err);
     }
   }, []);
-
-
-  const allowedRolesDp = [1, 4];
-  const canSaveDp = role !== null && allowedRolesDp.includes(role);
-  const allowedRoles = [1, 2, 3];
-  const canSave = role !== null && allowedRoles.includes(role);
 
 
   const {
@@ -94,7 +115,7 @@ export default function BookingManagementModal({ open, data, onClose }: any) {
     clearCustomer,
   } = useCustomerStore();
 
-  const { createBooking, updateBooking } = useBookingStore();
+  const { createBooking, updateBooking, updateBookingDp } = useBookingStore();
   const {
     availableTimeSlots,
     fetchAvailableTimeSlots,
@@ -139,7 +160,27 @@ export default function BookingManagementModal({ open, data, onClose }: any) {
   }, [customerSearch, customer?.id]);
 
 
+  const buildDpFormData = () => {
+    const formData = new FormData();
 
+    dpAmounts.forEach((dp, index) => {
+      formData.append(`dp_${index + 1}`, dp.amount || "0");
+
+      formData.append(
+        `date_dp_${index + 1}`,
+        dp.date ? new Date(dp.date).toISOString() : ""
+      );
+    });
+
+    // 🔥 status: 1 = completed, 0 = belum
+    formData.append("status", isDpCompleted ? "1" : "0");
+
+    if (dpFile) {
+      formData.append("downpayment_proof", dpFile);
+    }
+
+    return formData;
+  };
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -205,7 +246,14 @@ export default function BookingManagementModal({ open, data, onClose }: any) {
     }
   }, [form.date, form.time, selectedCategoryId]);
 
+  const formatDateOnly = (dateStr?: string) => {
+    if (!dateStr) return "";
 
+    const d = new Date(dateStr);
+    if (isNaN(d.getTime())) return "";
+
+    return d.toISOString().split("T")[0]; // YYYY-MM-DD
+  };
 
   useEffect(() => {
     if (orderedMenu.length === 0) {
@@ -262,6 +310,14 @@ export default function BookingManagementModal({ open, data, onClose }: any) {
       console.log("selectedCategoryId", selectedCategoryId);
       console.log("availableCategories", availableCategories);
 
+      if (data.statusDp === "completed") {
+        setIsDpCompleted(true);
+        setIsDpLocked(true); // 🔒 tidak bisa diubah lagi
+      } else {
+        setIsDpCompleted(false);
+        setIsDpLocked(false); // ✅ masih bisa edit
+      }
+
       // 🔥 FETCH CUSTOMER DETAIL
       if (data.customer?.id) {
         fetchCustomerById(data.customer.id);
@@ -277,6 +333,34 @@ export default function BookingManagementModal({ open, data, onClose }: any) {
         description: bm.menu.description,
         qty: bm.qty, // 🔥 pakai qty dari API
       }));
+
+      // ===============================
+      // 🔥 MAPPING DP
+      // ===============================
+      const mappedDp = [
+        {
+          amount: data.dp1 !== "0" ? data.dp1 : "0",
+          date: formatDateOnly(data.dateDp1),
+        },
+        {
+          amount: data.dp2 !== "0" ? data.dp2 : "0",
+          date: formatDateOnly(data.dateDp2),
+        },
+        {
+          amount: data.dp3 !== "0" ? data.dp3 : "0",
+          date: formatDateOnly(data.dateDp3),
+        },
+        {
+          amount: data.dp4 !== "0" ? data.dp4 : "0",
+          date: formatDateOnly(data.dateDp4),
+        },
+        {
+          amount: data.dp5 !== "0" ? data.dp5 : "0",
+          date: formatDateOnly(data.dateDp5),
+        },
+      ];
+
+      setDpAmounts(mappedDp);
 
       setForm({
         date: data.date || "",
@@ -313,7 +397,8 @@ export default function BookingManagementModal({ open, data, onClose }: any) {
         note: "",
         downpaymentProof: "",
       });
-
+      setIsDpCompleted(false);
+      setIsDpLocked(false);
 
       setNewCustomer({
         fullname: "",
@@ -387,9 +472,15 @@ export default function BookingManagementModal({ open, data, onClose }: any) {
 
 
   const handleDpAmountChange = (index: number, value: string) => {
-    setDpAmounts((prev) =>
-      prev.map((item, i) => (i === index ? value : item))
-    );
+    const updated = [...dpAmounts];
+    updated[index].amount = value;
+    setDpAmounts(updated);
+  };
+
+  const handleDpDateChange = (index: number, value: string) => {
+    const updated = [...dpAmounts];
+    updated[index].date = value;
+    setDpAmounts(updated);
   };
 
   const handleSave = async () => {
@@ -399,15 +490,15 @@ export default function BookingManagementModal({ open, data, onClose }: any) {
       let customerId: number | undefined = customer?.id;
 
       if (!customerId) {
-        if (!newCustomer.fullname || !newCustomer.phone) {
-          alert("Customer name & phone required");
-          setLoading(false);
-          return;
-        }
+        // if (!newCustomer.fullname || !newCustomer.phone) {
+        //   alert("Customer name & phone required");
+        //   setLoading(false);
+        //   return;
+        // }
 
         const createdCustomer = await createCustomer({
           fullname: newCustomer.fullname,
-          phone: newCustomer.phone,
+          phone: newCustomer.phone || "",
           email: newCustomer.email || "",
           instagram: newCustomer.instagram || "",
         });
@@ -442,6 +533,7 @@ export default function BookingManagementModal({ open, data, onClose }: any) {
       formData.append("time", form.time);
       formData.append("referenceNumber", form.referenceNumber);
       formData.append("expectedLeaveTime", form.expectedLeaveTime);
+      formData.append("leaveTime", form.leaveTime);
       formData.append("channel", form.channel);
       formData.append("spendMoney", form.spendMoney);
       formData.append("date", form.date);
@@ -453,9 +545,8 @@ export default function BookingManagementModal({ open, data, onClose }: any) {
       const dpPayload = dpAmounts
         .map((v, i) => ({
           order: i + 1,
-          amount: Number(v) || 0,
+          amount: Number(v.amount) || 0,
         }))
-        .filter((dp) => dp.amount > 0);
 
       formData.append("dpAmounts", JSON.stringify(dpPayload));
 
@@ -488,6 +579,33 @@ export default function BookingManagementModal({ open, data, onClose }: any) {
       setLoading(false);
     }
   };
+
+  const formatNumber = (value: string | number) => {
+    if (!value) return "";
+
+    const numberString = value.toString().replace(/[^,\d]/g, "");
+    const split = numberString.split(",");
+    const sisa = split[0].length % 3;
+    let result = split[0].substr(0, sisa);
+    const ribuan = split[0].substr(sisa).match(/\d{3}/gi);
+
+    if (ribuan) {
+      const separator = sisa ? "." : "";
+      result += separator + ribuan.join(".");
+    }
+
+    return result;
+  };
+
+  const totalPaid = dpAmounts.reduce(
+    (sum, item) => sum + Number(item.amount || 0),
+    0
+  );
+
+  const remainingDp = Math.max(
+    Number(form.totalDp || 0) - totalPaid,
+    0
+  );
 
   const canEditTime =
     status === "waiting_list" || status === "confirm" || status === "seated";
@@ -546,7 +664,7 @@ export default function BookingManagementModal({ open, data, onClose }: any) {
               <div className="w-full flex gap-4">
                 <div className="w-2/3">
 
-                  <div className="grid grid-cols-2 gap-4 text-sm mb-4">
+                  <div className="grid grid-cols-2 gap-4 text-sm mb-2">
                     <div className="flex flex-col">
                       <div className="flex flex-col relative">
                         <label>Name</label>
@@ -878,22 +996,24 @@ export default function BookingManagementModal({ open, data, onClose }: any) {
                         ))}
                       </select>
                     </div>
-                    <div className="flex flex-col">
-                      <label htmlFor="">Leave Time</label>
-                      <input
-                        type="time"
-                        className={`input ${!canEditTime ? "!bg-gray-100 cursor-not-allowed" : ""}`}
-                        disabled={!canEditTime}
-                        value={form.leaveTime}
-                        onChange={(e) =>
-                          setForm((prev) => ({
-                            ...prev,
-                            leaveTime: e.target.value,
-                          }))
-                        }
-                      />
+                    {canMoney && (
 
-                    </div>
+                      <div className="flex flex-col">
+                        <label htmlFor="">Leave Time</label>
+                        <input
+                          type="time"
+                          className="input"
+                          value={form.leaveTime}
+                          onChange={(e) =>
+                            setForm((prev) => ({
+                              ...prev,
+                              leaveTime: e.target.value,
+                            }))
+                          }
+                        />
+
+                      </div>
+                    )}
 
                     <div className="flex flex-col">
                       <label htmlFor="">Reference Number</label>
@@ -985,26 +1105,36 @@ export default function BookingManagementModal({ open, data, onClose }: any) {
           </div>
 
           {needDp && (
-            <div className="mt-4 border-t pt-4 space-y-4">
+            <div className="border-t pt-4 space-y-4">
               <label className="font-semibold block">Down Payment</label>
-
-
-
-
 
               {/* TOTAL AUTO (optional tapi bagus 🔥) */}
 
-              <div className="flex flex-col mb-3">
-                <label>Total DP</label>
-
-                <input
-                  className={`input !bg-gray-100 cursor-not-allowed`}
-                  disabled={!canEditTime}
-                  value={form.totalDp}
-                  onChange={(e) =>
-                    setForm((prev) => ({ ...prev, referenceNumber: e.target.value }))
-                  }
-                />
+              <div className="grid grid-cols-3 gap-3 mb-3">
+                <div className="flex flex-col">
+                  <label>Total DP</label>
+                  <input
+                    className="input !bg-gray-100 cursor-not-allowed"
+                    disabled
+                    value={formatNumber(form.totalDp)}
+                  />
+                </div>
+                <div className="flex flex-col">
+                  <label>DP Paid</label>
+                  <input
+                    className="input !bg-gray-100 cursor-not-allowed"
+                    disabled
+                    value={formatNumber(totalPaid) || 0}
+                  />
+                </div>
+                <div className="flex flex-col">
+                  <label>Remaining DP</label>
+                  <input
+                    className="input !bg-gray-100 cursor-not-allowed"
+                    disabled
+                    value={formatNumber(remainingDp) || 0}
+                  />
+                </div>
               </div>
 
 
@@ -1046,16 +1176,22 @@ export default function BookingManagementModal({ open, data, onClose }: any) {
 
 
 
-                  {canSaveDp && (
-
-                    <button
-                      type="button"
-                      onClick={() => fileInputRef.current?.click()}
-                      className="px-3 py-1 text-sm text-white w-fit border self-end rounded bg-primary"
-                    >
-                      Upload
-                    </button>
-                  )}
+                  <button
+                    type="button"
+                    onClick={() => {
+                      if (!canSaveDp || isDpLocked) return;
+                      fileInputRef.current?.click();
+                    }}
+                    disabled={!canSaveDp || isDpLocked}
+                    className={`
+    px-3 py-1 text-sm text-white w-fit border self-end rounded
+    ${!canSaveDp || isDpLocked
+                        ? "bg-gray-400 cursor-not-allowed"
+                        : "bg-primary hover:bg-primary/80"}
+  `}
+                  >
+                    Upload
+                  </button>
 
                   <input
                     ref={fileInputRef}
@@ -1074,72 +1210,135 @@ export default function BookingManagementModal({ open, data, onClose }: any) {
 
                 {/* 5 AMOUNT FIELD */}
                 <div className="grid grid-cols-1 gap-3">
-                  {dpAmounts.map((amount, index) => (
-                    <div key={index} className="flex flex-col">
-                      <label className="text-xs">DP {index + 1}</label>
-                      <input
-                        className={`
-          input
-          ${!canSaveDp ? "!bg-gray-100 cursor-not-allowed text-gray-500" : ""}
-        `}
-                        placeholder="Amount"
-                        value={amount}
-                        disabled={!canSaveDp}
-                        onChange={(e) => {
-                          if (!canSaveDp) return; // 🔥 extra safety
-                          handleDpAmountChange(index, e.target.value);
-                        }}
-                      />
+                  {dpAmounts.map((item, index) => (
+                    <div key={index} className="grid grid-cols-2 gap-2 items-end">
+
+                      {/* AMOUNT */}
+                      <div className="flex flex-col">
+                        <label className="text-xs">DP {index + 1} Amount</label>
+                        <input
+                          className={`
+            input
+            ${!canSaveDp ? "!bg-gray-100 cursor-not-allowed text-gray-500" : ""}
+          `}
+                          placeholder="Amount"
+                          value={formatNumber(item.amount)}
+                          disabled={!canSaveDp || isDpLocked}
+                          onChange={(e) => {
+                            if (!canSaveDp) return;
+                            handleDpAmountChange(index, e.target.value);
+                          }}
+                        />
+                      </div>
+
+                      {/* DATE */}
+                      <div className="flex flex-col">
+                        <label className="text-xs">Date</label>
+                        <input
+                          type="date"
+                          className={`
+            input
+            ${!canSaveDp ? "!bg-gray-100 cursor-not-allowed text-gray-500" : ""}
+          `}
+                          value={item.date}
+                          disabled={!canSaveDp || isDpLocked}
+                          onChange={(e) => {
+                            if (!canSaveDp) return;
+                            handleDpDateChange(index, e.target.value);
+                          }}
+                        />
+                      </div>
+
                     </div>
                   ))}
                 </div>
               </div>
-              <label
-                className={`
-    flex items-center justify-between border rounded-lg px-3 py-2
-    ${canSaveDp ? "bg-white cursor-pointer" : "bg-gray-100 cursor-not-allowed opacity-60"}
-  `}
-              >
-                <span className="text-sm font-medium">
-                  DP Completed
-                </span>
+              <div className="flex items-center justify-end gap-6 border rounded-lg px-3 py-2">
 
-                <div className="relative">
+                {/* LEFT: CHECKBOX */}
+                <label className="flex items-center gap-2 text-sm font-medium">
                   <input
                     type="checkbox"
                     checked={isDpCompleted}
-                    disabled={!canSaveDp}
+                    disabled={!canSaveDp || isDpLocked}
                     onChange={(e) => {
-                      if (!canSaveDp) return; // 🔥 extra safety
+                      if (!canSaveDp || isDpLocked) return;
                       setIsDpCompleted(e.target.checked);
                     }}
-                    className="sr-only peer"
+                    className="w-4 h-4 accent-green-600 cursor-pointer disabled:cursor-not-allowed"
                   />
+                  DP Completed
+                </label>
 
-                  {/* TRACK */}
-                  <div
-                    className={`
-        w-11 h-6 rounded-full transition
-        ${isDpCompleted ? "bg-green-500" : "bg-gray-300"}
-        ${!canSaveDp ? "bg-gray-300" : ""}
-      `}
-                  />
-
-                  {/* THUMB */}
-                  <div
-                    className={`
-        absolute top-0.5 left-0.5 
-        w-5 h-5 bg-white rounded-full shadow
-        transition
-        ${isDpCompleted ? "translate-x-5" : ""}
-      `}
-                  />
-                </div>
-              </label>
+                {/* RIGHT: BUTTON */}
+                <button
+                  type="button"
+                  disabled={!canSaveDp || isDpLocked}
+                  onClick={() => {
+                    if (!canSaveDp || isDpLocked) return;
+                    setConfirmModalOpen(true); // 🔥 buka modal
+                  }}
+                  className={`
+    px-3 py-1 text-sm text-white rounded
+    ${!canSaveDp || isDpLocked
+                      ? "bg-gray-400 cursor-not-allowed"
+                      : "bg-primary hover:bg-primary/80"
+                    }
+  `}
+                >
+                  {isDpLocked ? "Updated" : "Update DP Status"}
+                </button>
+              </div>
             </div>
           )}
 
         </div>
+
+        {confirmModalOpen && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
+            <div className="bg-white rounded-xl p-6 w-[350px] shadow-lg">
+
+              <h2 className="text-lg font-semibold mb-2">
+                Confirm Update
+              </h2>
+
+              <p className="text-sm text-gray-600 mb-6">
+                Are you sure you want to update DP status?
+              </p>
+
+              <div className="flex justify-end gap-3">
+                <button
+                  onClick={() => setConfirmModalOpen(false)}
+                  className="px-4 py-2 bg-gray-200 rounded"
+                >
+                  Cancel
+                </button>
+
+                <button
+                  onClick={async () => {
+                    try {
+                      if (!detail?.id) return;
+
+                      const formData = buildDpFormData();
+
+                      await updateBookingDp(detail.id, formData);
+                      if (isDpCompleted) {
+                        setIsDpLocked(true);
+                      }
+
+                      setConfirmModalOpen(false);
+                    } catch (err) {
+                      console.error(err);
+                    }
+                  }}
+                  className="px-4 py-2 bg-primary text-white rounded"
+                >
+                  Confirm
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
 
 
         <div className="flex items-end">
@@ -1214,9 +1413,6 @@ export default function BookingManagementModal({ open, data, onClose }: any) {
           setIsSelectMenu(true);
         }}
       />
-
-
-
 
       {/* INPUT STYLE */}
       <style>{`

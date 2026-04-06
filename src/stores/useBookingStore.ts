@@ -6,6 +6,7 @@ import {
   createBookingApi,
   updateBookingApi,
   deleteBookingApi,
+  updateBookingDpApi
 } from "../api/bookingApi";
 import type { Booking } from "../api/bookingApi";
 
@@ -31,7 +32,7 @@ interface BookingState {
   page: number;
   limit: number;
   loading: boolean;
-  closeOuts: CloseOut[]; 
+  closeOuts: CloseOut[];
   totalBooking: number;
   totalPax: number;
   totalSpent: number;
@@ -39,7 +40,7 @@ interface BookingState {
   filters: BookingFilters;
   setFilters: (filters: Partial<BookingFilters>) => void;
   resetFilters: () => void;
-
+  updateBookingDp: (id: number, formData: FormData) => Promise<void>;
   fetchBookings: (page?: number, limit?: number) => Promise<void>;
   createBooking: (formData: FormData) => Promise<void>;
   updateBooking: (id: number, formData: FormData) => Promise<void>;
@@ -64,6 +65,17 @@ export const useBookingStore = create<BookingState>((set, get) => ({
       page: 1,
     }),
 
+  updateBookingDp: async (id, formData) => {
+    try {
+      await updateBookingDpApi(id, formData);
+      toast.success("DP updated");
+
+      const { page, limit } = get();
+      get().fetchBookings(page, limit); // refresh data
+    } catch (err: any) {
+      toast.error(err?.message || "Failed to update DP");
+    }
+  },
 
   /* ================= SET FILTER ================= */
   setFilters: (newFilters) => {
@@ -74,28 +86,28 @@ export const useBookingStore = create<BookingState>((set, get) => ({
   },
 
   /* ================= FETCH ================= */
-fetchBookings: async (page = get().page, limit = get().limit) => {
-  try {
-    set({ loading: true });
+  fetchBookings: async (page = get().page, limit = get().limit) => {
+    try {
+      set({ loading: true });
 
-    const { filters } = get();
-    const res = await getBookingApi(page, limit, filters);
+      const { filters } = get();
+      const res = await getBookingApi(page, limit, filters);
 
-    set({
-      items: res.data.items,
-      total: res.data.total,
-      closeOuts: res.data.closeOuts || [],
-      totalBooking: res.data.totalBooking,
-      totalPax: res.data.totalPax,
-      totalSpent: res.data.totalSpent,
+      set({
+        items: res.data.items,
+        total: res.data.total,
+        closeOuts: res.data.closeOuts || [],
+        totalBooking: res.data.totalBooking,
+        totalPax: res.data.totalPax,
+        totalSpent: res.data.totalSpent,
 
-    });
-  } catch {
-    toast.error("Failed to load booking");
-  } finally {
-    set({ loading: false });
-  }
-},
+      });
+    } catch {
+      toast.error("Failed to load booking");
+    } finally {
+      set({ loading: false });
+    }
+  },
 
 
   /* ================= CREATE ================= */

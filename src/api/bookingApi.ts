@@ -87,6 +87,20 @@ export interface BookingFilterParams {
 
 /* ================= API ================= */
 
+// ================= UPDATE DP =================
+export const updateBookingDpApi = async (
+  id: number,
+  formData: FormData
+): Promise<BookingSingleResponse> => {
+  return fetchWithAuth<BookingSingleResponse>(
+    `${import.meta.env.VITE_API_BASE_URL}/booking/update-dp/${id}`,
+    {
+      method: "POST", // ⚠️ biasanya endpoint DP pakai POST
+      body: formData,
+    }
+  );
+};
+
 // GET
 export const getBookingApi = async (
   page: number,

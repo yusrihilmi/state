@@ -51,12 +51,34 @@ export default function UserReservationBookingSearch() {
       ...bookingDetail,
       status: bookingDetail.status,
       guest: bookingDetail.totalPax,
-      orderedMenu: bookingDetail.bookingMenus?.map((item: any) => ({
-        id: item.id,
-        name: item.menu?.name,
-        price: item.menu?.price,
-        qty: item.qty,
-      })) || [],
+
+      // 🔥 mapping DP jadi array
+      dpPayments: [
+        {
+          amount: bookingDetail.dp1,
+        },
+        {
+          amount: bookingDetail.dp2,
+        },
+        {
+          amount: bookingDetail.dp3,
+        },
+        {
+          amount: bookingDetail.dp4,
+        },
+        {
+          amount: bookingDetail.dp5,
+        },
+      ].filter((item) => Number(item.amount) > 0), // 🔥 buang yang 0
+
+      orderedMenu:
+        bookingDetail.bookingMenus?.map((item: any) => ({
+          id: item.id,
+          name: item.menu?.name,
+          price: item.menu?.price,
+          qty: item.qty,
+        })) || [],
+
       timeLabel: bookingDetail.time,
       fullname: bookingDetail.customer?.fullname,
       phone: bookingDetail.customer?.phone,
@@ -88,31 +110,31 @@ export default function UserReservationBookingSearch() {
     }
   };
 
-const handleSearch = async () => {
-  if (!searchCode) return;
+  const handleSearch = async () => {
+    if (!searchCode) return;
 
-  setReservation(null);
-  setBookingList([]);
+    setReservation(null);
+    setBookingList([]);
 
-  if (searchCode.length <= 6) {
-    // 🔥 BY CODE
-    await fetchBookingByCode(searchCode.toUpperCase());
-  } else {
-    // 🔥 BY PHONE
-    const res = await fetchBookingByPhone(searchCode);
+    if (searchCode.length <= 6) {
+      // 🔥 BY CODE
+      await fetchBookingByCode(searchCode.toUpperCase());
+    } else {
+      // 🔥 BY PHONE
+      const res = await fetchBookingByPhone(searchCode);
 
-    if (res?.length) {
-      // optional: sort terbaru
-      const sorted = res.sort(
-        (a: any, b: any) =>
-          new Date(b.date + " " + b.time).getTime() -
-          new Date(a.date + " " + a.time).getTime()
-      );
+      if (res?.length) {
+        // optional: sort terbaru
+        const sorted = res.sort(
+          (a: any, b: any) =>
+            new Date(b.date + " " + b.time).getTime() -
+            new Date(a.date + " " + a.time).getTime()
+        );
 
-      setBookingList(sorted);
+        setBookingList(sorted);
+      }
     }
-  }
-};
+  };
 
   useEffect(() => {
     if (bookingDetail) {
@@ -215,6 +237,18 @@ const handleSearch = async () => {
     : (reservation?.guest >= minimumPax
       ? "Booking Pending Payment!"
       : "Booking Registration Complete!");
+
+
+  const totalPaid =
+    reservation?.dpPayments?.reduce(
+      (sum: number, item: any) => sum + Number(item.amount || 0),
+      0
+    ) || 0;
+
+  const remainingDp = Math.max(
+    Number(reservation?.totalDp || 0) - totalPaid,
+    0
+  );
 
   return (
     <div className="relative h-screen font-montserrat text-white overflow-hidden">
@@ -355,7 +389,7 @@ const handleSearch = async () => {
                 {/* QR CODE */}
                 <div className="pt-4 border-t flex flex-col items-center gap-3">
                   <QRCodeSVG
-                    value={`https://yusrihilmi.github.io/state/admin/reservation-calendar/${reservation.bookingCode}`}
+                    value={`https://yusrihilmi.github.io/state/office/reservation-calendar/${reservation.bookingCode}`}
                     size={160}
                     level="H"
                   />
@@ -381,6 +415,14 @@ const handleSearch = async () => {
                             Deposit Amount :
                             <b> Rp {Number(reservation.totalDp).toLocaleString("id-ID")}</b>
                           </p>
+                          <p className="text-sm">
+                            Deposit Paid :
+                            <b> Rp {Number(totalPaid).toLocaleString("id-ID")}</b>
+                          </p>
+                          <p className="text-sm">
+                            Remaining Deposit :
+                            <b> Rp {Number(remainingDp).toLocaleString("id-ID")}</b>
+                          </p>
 
                           <p className="mt-2">
                             <b>Please transfer the deposit to the following account:</b>
@@ -405,6 +447,14 @@ const handleSearch = async () => {
                           <p className="text-sm">
                             Deposit Amount :
                             <b> Rp {Number(reservation.totalDp).toLocaleString("id-ID")}</b>
+                          </p>
+                          <p className="text-sm">
+                            Deposit Paid :
+                            <b> Rp {Number(totalPaid).toLocaleString("id-ID")}</b>
+                          </p>
+                          <p className="text-sm">
+                            Remaining Deposit :
+                            <b> Rp {Number(remainingDp).toLocaleString("id-ID")}</b>
                           </p>
                         </>
                       )}

@@ -2,11 +2,21 @@
 import { create } from "zustand";
 import { persist, createJSONStorage } from "zustand/middleware";
 
+interface AccessMenu {
+  menu_id: number;
+  name: string;
+  view_only: boolean;
+  view_edit: boolean;
+  no_access: boolean;
+}
+
 interface UserData {
   id: number;
   username: string;
   fullName: string;
-  role: number;
+  branchId: number;
+  roleId: number;
+  access: AccessMenu[];
 }
 
 interface TokenData {

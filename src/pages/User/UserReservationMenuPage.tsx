@@ -216,7 +216,7 @@ export default function UserReservationMenuPage() {
                         <button
                             onClick={() => {
                                 localStorage.removeItem("reservation_step_3");
-                                navigate("/state/reservation/step-2");
+                                navigate("/state/reservation/step-1");
                             }}
                             className="w-full py-3 rounded-lg bg-gray-300 text-gray-700 hover:text-gray-700"
                         >

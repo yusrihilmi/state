@@ -22,6 +22,30 @@ export default function RestaurantSettings() {
   const [logoFile, setLogoFile] = useState<File | null>(null);
   const [bgImageFile, setBgImageFile] = useState<File | null>(null);
   const [openPicker, setOpenPicker] = useState<string | null>(null);
+  const [canSave, setCanSave] = useState(false);
+
+  useEffect(() => {
+    try {
+      const raw = localStorage.getItem("auth-storage");
+      if (!raw) return;
+
+      const parsed = JSON.parse(raw);
+      const access = parsed?.state?.user?.access || [];
+
+      const hasPermission = access.some(
+        (item: any) =>
+          item.menu_id === 15 &&
+          item.no_access === false &&
+          item.view_edit === true
+      );
+
+      setCanSave(hasPermission);
+    } catch (err) {
+      console.error("Failed to parse auth-storage", err);
+    }
+  }, []);
+
+
   useEffect(() => {
     const handleClickOutside = () => setOpenPicker(null);
     if (openPicker) {
@@ -174,9 +198,9 @@ export default function RestaurantSettings() {
                       <div className="relative group cursor-pointer">
                         <img
                           src={backgroundImage}
-                          className="w-full h-60 object-cover rounded-full border"
+                          className="w-full h-60 object-cover rounded-md border"
                         />
-                        <label className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition flex items-center justify-center rounded-full cursor-pointer">
+                        <label className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition flex items-center justify-center rounded-md cursor-pointer">
                           <span className="text-white text-sm">
                             Upload Photo
                             <input
@@ -401,13 +425,15 @@ export default function RestaurantSettings() {
 
               {/* SAVE */}
               <div className="flex justify-end mt-6">
-                <button
-                  disabled={loading}
-                  onClick={handleSave}
-                  className="px-8 py-2 rounded-md bg-[#968859] text-white disabled:opacity-50"
-                >
-                  Save
-                </button>
+                {canSave && (
+                  <button
+                    disabled={loading}
+                    onClick={handleSave}
+                    className="px-8 py-2 rounded-md bg-[#968859] text-white disabled:opacity-50"
+                  >
+                    Save
+                  </button>
+                )}
               </div>
 
             </div>

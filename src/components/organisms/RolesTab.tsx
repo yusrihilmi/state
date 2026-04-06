@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import RolesModal from "../modal/RolesModal";
-import { useRoleManagementStore } from "../../stores/useRoleManagementStore";
+import { useAclManagementStore } from "../../stores/useAclManagementStore";
 
 export default function RolesTab() {
   const {
@@ -9,44 +9,63 @@ export default function RolesTab() {
     page,
     limit,
     fetchRoles,
+    fetchRolesDefault,
     deleteRole,
     loading,
-  } = useRoleManagementStore();
+  } = useAclManagementStore();
 
   const [modalOpen, setModalOpen] = useState(false);
   const [selected, setSelected] = useState<any>(null);
   const [deleteId, setDeleteId] = useState<number | null>(null);
+  const [canSave, setCanSave] = useState(false);
+
+  useEffect(() => {
+    try {
+      const raw = localStorage.getItem("auth-storage");
+      if (!raw) return;
+
+      const parsed = JSON.parse(raw);
+      const access = parsed?.state?.user?.access || [];
+
+      const hasPermission = access.some(
+        (item: any) =>
+          item.menu_id === 13 &&
+          item.no_access === false &&
+          item.view_edit === true
+      );
+
+      setCanSave(hasPermission);
+    } catch (err) {
+      console.error("Failed to parse auth-storage", err);
+    }
+  }, []);
 
 
   const totalPages = Math.ceil(total / limit);
 
   useEffect(() => {
     fetchRoles(page, limit);
+    fetchRolesDefault
   }, [page, limit]);
 
-  const ROLE_LABEL: Record<number, string> = {
-    1: "Super Admin",
-    2: "Manager",
-    3: "GRO (Guest Relation Officer)",
-    4: "Cashier",
-    5: "Accounting",
-    6: "Marketing",
-  };
+
 
 
   return (
     <div className="p-4">
       {/* HEADER */}
       <div className="flex justify-end mb-4">
-        <button
-          onClick={() => {
-            setSelected(null);
-            setModalOpen(true);
-          }}
-          className="px-4 py-2 bg-primary text-white rounded-md text-sm"
-        >
-          + Add Roles
-        </button>
+        {canSave && (
+          <button
+            onClick={() => {
+              setSelected(null);
+              setModalOpen(true);
+            }}
+            className="px-4 py-2 bg-primary text-white rounded-md text-sm"
+          >
+            + Add Role
+          </button>
+        )}
       </div>
 
       {/* TABLE */}
@@ -54,10 +73,9 @@ export default function RolesTab() {
         <table className="w-full text-sm">
           <thead className="bg-gray-50 text-left">
             <tr>
-              <th className="p-3">Fullname</th>
-              <th className="p-3">Username</th>
-              <th className="p-3">Role</th>
-              <th className="p-3 w-40">Action</th>
+              <th className="p-3">Role Name</th>
+              <th className="p-3">Default Role</th>
+              {canSave && <th className="p-3 w-40">Action</th>}
             </tr>
           </thead>
 
@@ -77,30 +95,35 @@ export default function RolesTab() {
             ) : (
               items.map((item) => (
                 <tr key={item.id} className="border-t">
-                  <td className="p-3">{item.fullname}</td>
-                  <td className="p-3">{item.username}</td>
+                  {/* ROLE NAME */}
+                  <td className="p-3">{item.name}</td>
+
+                  {/* DEFAULT ROLE */}
                   <td className="p-3">
-                    {ROLE_LABEL[item.role] || "Unknown"}
+                    {item.roleDefault?.name || "-"}
                   </td>
 
-                  <td className="p-3 flex gap-3">
-                    <button
-                      onClick={() => {
-                        setSelected(item);
-                        setModalOpen(true);
-                      }}
-                      className="text-primary text-sm"
-                    >
-                      Edit
-                    </button>
+                  {/* ACTION */}
+                  {canSave && (
+                    <td className="p-3 flex gap-3">
+                      <button
+                        onClick={() => {
+                          setSelected(item);
+                          setModalOpen(true);
+                        }}
+                        className="text-primary text-sm"
+                      >
+                        Edit
+                      </button>
 
-                    <button
-                      onClick={() => setDeleteId(item.id)}
-                      className="text-red-500 text-sm"
-                    >
-                      Delete
-                    </button>
-                  </td>
+                      <button
+                        onClick={() => setDeleteId(item.id)}
+                        className="text-red-500 text-sm"
+                      >
+                        Delete
+                      </button>
+                    </td>
+                  )}
                 </tr>
               ))
             )}
@@ -113,8 +136,8 @@ export default function RolesTab() {
           <div className="bg-white rounded-lg shadow-lg w-80 p-6">
             <h3 className="text-lg font-semibold mb-2">Delete Role</h3>
             <p className="text-sm text-gray-600 mb-4">
-              Are you sure you want to delete user "
-              {items.find(i => i.id === deleteId)?.fullname}"?
+              Are you sure you want to delete role "
+              {items.find(i => i.id === deleteId)?.name}"?
             </p>
 
             <div className="flex justify-end gap-2">

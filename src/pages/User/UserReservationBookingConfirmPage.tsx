@@ -261,7 +261,7 @@ export default function UserReservationBookingConfirmPage() {
                 {/* QR CODE */}
                 <div className="pt-4 border-t flex flex-col items-center gap-3">
                   <QRCodeSVG
-                    value={`https://yusrihilmi.github.io/state/admin/reservation-calendar/${reservation.bookingCode}`}
+                    value={`https://yusrihilmi.github.io/state/office/reservation-calendar/${reservation.bookingCode}`}
                     size={160}
                     level="H"
                   />

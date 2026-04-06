@@ -12,7 +12,29 @@ export default function MenuListTab() {
   const [selected, setSelected] = useState<any>(null);
   const { items: categories, fetchMenuCategories } = useMenuCategoryStore();
   const [deleteId, setDeleteId] = useState<number | null>(null);
+  const [canSave, setCanSave] = useState(false);
 
+  useEffect(() => {
+    try {
+      const raw = localStorage.getItem("auth-storage");
+      if (!raw) return;
+
+      const parsed = JSON.parse(raw);
+      const access = parsed?.state?.user?.access || [];
+
+      const hasPermission = access.some(
+        (item: any) =>
+          item.menu_id === 8 &&
+          item.no_access === false &&
+          item.view_edit === true
+      );
+
+      setCanSave(hasPermission);
+
+    } catch (err) {
+      console.error("Failed to parse auth-storage", err);
+    }
+  }, []);
 
 
 
@@ -80,15 +102,17 @@ export default function MenuListTab() {
               ))}
             </select>
           </div>
-          <button
-            onClick={() => {
-              setSelected(null);
-              setModalOpen(true);
-            }}
-            className="px-4 py-2 bg-primary text-white rounded-md text-sm"
-          >
-            + Add Menu
-          </button>
+          {canSave && (
+            <button
+              onClick={() => {
+                setSelected(null);
+                setModalOpen(true);
+              }}
+              className="px-4 py-2 bg-primary text-white rounded-md text-sm"
+            >
+              + Add Menu
+            </button>
+          )}
 
         </div>
         {/* FILTER */}
@@ -175,20 +199,28 @@ export default function MenuListTab() {
 
 
                 {/* ACTION */}
-                <td className="p-3 text-right">
+                <td className="p-3 text-right flex gap-2 justify-end">
                   <button
+                    disabled={!canSave}
                     onClick={() => {
+                      if (!canSave) return;
                       setSelected(menu);
                       setModalOpen(true);
                     }}
-                    className="text-primary text-sm font-medium"
+                    className={`text-sm font-medium ${canSave ? "text-primary" : "text-gray-400 cursor-not-allowed"
+                      }`}
                   >
                     Edit
                   </button>
 
                   <button
-                    onClick={() => setDeleteId(menu.id)}
-                    className="text-red-500 text-sm"
+                    disabled={!canSave}
+                    onClick={() => {
+                      if (!canSave) return;
+                      setDeleteId(menu.id);
+                    }}
+                    className={`text-sm ${canSave ? "text-red-500" : "text-gray-400 cursor-not-allowed"
+                      }`}
                   >
                     Delete
                   </button>

@@ -21,7 +21,7 @@ export default function CloseOutModal({ open, data, onClose }: Props) {
     } = useCloseOutStore();
 
     const [editingId, setEditingId] = useState<number | null>(null);
-    const [role, setRole] = useState<number | null>(null);
+    const [canSave, setCanSave] = useState(false);
 
     useEffect(() => {
         try {
@@ -29,17 +29,21 @@ export default function CloseOutModal({ open, data, onClose }: Props) {
             if (!raw) return;
 
             const parsed = JSON.parse(raw);
-            const userRole = parsed?.state?.user?.role;
+            const access = parsed?.state?.user?.access || [];
 
-            setRole(userRole);
+            const hasPermission = access.some(
+                (item: any) =>
+                    item.menu_id === 4 &&
+                    item.no_access === false &&
+                    item.view_edit === true
+            );
+
+            setCanSave(hasPermission);
+
         } catch (err) {
             console.error("Failed to parse auth-storage", err);
         }
     }, []);
-
-
-    const allowedRoles = [1, 2];
-    const canSave = role !== null && allowedRoles.includes(role);
 
     const {
         items: categories,
@@ -461,13 +465,13 @@ export default function CloseOutModal({ open, data, onClose }: Props) {
                             Next
                         </button>
                     </div>
-                    
-                                <button
-                                    onClick={onClose}
-                                    className="px-4 py-2 bg-gray-200 rounded float-end mt-4"
-                                >
-                                    Close
-                                </button>
+
+                    <button
+                        onClick={onClose}
+                        className="px-4 py-2 bg-gray-200 rounded float-end mt-4"
+                    >
+                        Close
+                    </button>
                 </div>
 
                 <style>{`
@@ -480,7 +484,7 @@ export default function CloseOutModal({ open, data, onClose }: Props) {
           }
         `}</style>
             </div>
-            
+
         </div>
     );
 }

@@ -174,6 +174,11 @@ export interface BookingDetail {
   branch: BookingBranch;
   bookingMenus: BookingMenuItem[];
   status: string;
+  dp1: string;
+  dp2: string;
+  dp3: string;
+  dp4: string;
+  dp5: string;
 }
 
 export interface BookingDetailResponse {
@@ -198,6 +203,49 @@ export interface SpecialRequestListResponse {
   message: string;
   data: SpecialRequestItem[];
 }
+
+export interface TableAvailabilityItem {
+  categoryId: number;
+  categoryName: string;
+  closeOut: boolean;
+  available: boolean;
+  availablePax: number;
+  alternativeText: string;
+}
+
+export interface TableAvailabilityResponse {
+  status: string;
+  message: string;
+  data: TableAvailabilityItem[];
+}
+
+export const getTableAvailabilityApi = async (
+  date: string,
+  time: string,
+  totalPax: number,
+  categoryId: number
+): Promise<TableAvailabilityItem[]> => {
+  const response = await fetch(
+    `${import.meta.env.VITE_API_BASE_URL}/microsite/table-availability?date=${date}&time=${encodeURIComponent(
+      time
+    )}&totalPax=${totalPax}&categoryId=${categoryId}`,
+    {
+      method: "GET",
+      headers: {
+        "Content-Type": "application/json",
+        "x-api-key": import.meta.env.VITE_API_KEY,
+      },
+    }
+  );
+
+  if (!response.ok) {
+    const errorText = await response.text();
+    throw new Error(errorText || "Failed to fetch table availability");
+  }
+
+  const result: TableAvailabilityResponse = await response.json();
+  return result.data;
+};
 
 export const getSpecialRequestsApi = async (): Promise<SpecialRequestItem[]> => {
   const response = await fetch(
@@ -267,11 +315,9 @@ export const getBookingByPhoneApi = async (
 };
 
 export const getAvailableTableCategoriesApi = async (
-  date: string,
-  time: string
 ): Promise<AvailableTableCategory[]> => {
   const response = await fetch(
-    `${import.meta.env.VITE_API_BASE_URL}/microsite/available-table-categories?date=${date}&time=${time}`,
+    `${import.meta.env.VITE_API_BASE_URL}/microsite/available-table-categories`,
     {
       method: "GET",
       headers: {

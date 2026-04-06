@@ -16,7 +16,7 @@ export default function SpecialRequestModal({ open, onClose }: Props) {
 
   const [form, setForm] = useState<any[]>([]);
   const [saving, setSaving] = useState(false);
-  const [role, setRole] = useState<number | null>(null);
+  const [canSave, setCanSave] = useState(false);
 
   useEffect(() => {
     try {
@@ -24,9 +24,17 @@ export default function SpecialRequestModal({ open, onClose }: Props) {
       if (!raw) return;
 
       const parsed = JSON.parse(raw);
-      const userRole = parsed?.state?.user?.role;
+      const access = parsed?.state?.user?.access || [];
 
-      setRole(userRole);
+      const hasPermission = access.some(
+        (item: any) =>
+          item.menu_id === 11 &&
+          item.no_access === false &&
+          item.view_edit === true
+      );
+
+      setCanSave(hasPermission);
+
     } catch (err) {
       console.error("Failed to parse auth-storage", err);
     }
@@ -84,8 +92,6 @@ export default function SpecialRequestModal({ open, onClose }: Props) {
     }
   };
 
-  const allowedRoles = [1, 2, 6];
-  const canSave = role !== null && allowedRoles.includes(role);
 
   return (
     <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50">
@@ -104,7 +110,9 @@ export default function SpecialRequestModal({ open, onClose }: Props) {
 
               <input
                 type="text"
-                className="input"
+                className={`input ${!canSave ? "cursor-not-allowed bg-gray-100" : ""
+                  }`}
+                disabled={!canSave}
                 value={item.title}
                 onChange={(e) => handleChange(index, e.target.value)}
                 placeholder="Enter request..."

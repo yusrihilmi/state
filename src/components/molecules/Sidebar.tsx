@@ -1,68 +1,74 @@
 import { useState } from "react";
 import { NavLink } from "react-router-dom";
 import { useAuthStore } from "../../stores/useAuthStore";
-import { Menu, LayoutDashboard, CalendarDays, Album, HandPlatter, Utensils, Percent, Settings, Users, UserCog } from "lucide-react";
+import { Menu, LayoutDashboard, CalendarDays, Album, HandPlatter, Utensils, Percent, Settings, Users, UserCog, Settings2 } from "lucide-react";
 
 const menuItems = [
     {
         icon: LayoutDashboard,
         label: "Dashboard Summary",
-        path: "/state/admin/dashboard-summary",
-        allowedRoles: [1, 2, 6],
+        path: "/state/office/dashboard-summary",
+        menuId: 1,
     },
     {
         icon: CalendarDays,
         label: "Reservation Calendar",
-        path: "/state/admin/reservation-calendar",
-        allowedRoles: [1, 2, 3, 6],
+        path: "/state/office/reservation-calendar",
+        menuId: 2,
     },
     {
         icon: Album,
         label: "Booking Management",
-        path: "/state/admin/booking-management",
-        allowedRoles: [1, 2, 3, 4, 5, 6],
+        path: "/state/office/booking-management",
+        menuId: 3,
     },
     {
         icon: Utensils,
         label: "Menu Management",
-        path: "/state/admin/menu-management",
-        allowedRoles: [1, 2, 6],
+        path: "/state/office/menu-management",
+        menuId: 8,
     },
     {
         icon: HandPlatter,
         label: "Table Management",
-        path: "/state/admin/table-management",
-        allowedRoles: [1, 2, 6],
+        path: "/state/office/table-management",
+        menuId: 9,
     },
     {
         icon: Percent,
         label: "Promotion",
-        path: "/state/admin/promotion",
-        allowedRoles: [1, 2, 3, 4, 6],
+        path: "/state/office/promotion",
+        menuId: 10,
     },
     {
         icon: Users,
         label: "Customer Data",
-        path: "/state/admin/customer-data",
-        allowedRoles: [1, 2, 5, 6],
+        path: "/state/office/customer-data",
+        menuId: 12,
     },
     {
         icon: UserCog,
+        label: "User Management",
+        path: "/state/office/user-management",
+        menuId: 14,
+    },
+    {
+        icon: Settings2,
         label: "Roles Management",
-        path: "/state/admin/roles-management",
-        allowedRoles: [1], // super admin only
+        path: "/state/office/roles-management",
+        menuId: 13,
     },
     {
         icon: Settings,
         label: "Restaurant Settings",
-        path: "/state/admin/restaurant-settings",
-        allowedRoles: [1], // super admin only
+        path: "/state/office/restaurant-settings",
+        menuId: 15,
     },
 ];
 
 
 export default function Sidebar() {
-const user = useAuthStore((state) => state.user);
+    const user = useAuthStore((state) => state.user);
 
     const [collapsed, setCollapsed] = useState(true);
 
@@ -88,7 +94,10 @@ const user = useAuthStore((state) => state.user);
             <nav className="px-3 space-y-2 mt-4">
                 {menuItems
                     .filter((item) =>
-                        user ? item.allowedRoles.includes(user.role) : false
+                        user?.access?.some(
+                            (acc) =>
+                                acc.menu_id === item.menuId && acc.no_access === false
+                        )
                     )
                     .map((item) => {
                         const Icon = item.icon;
