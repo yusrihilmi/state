@@ -143,14 +143,55 @@ export default function BookingManagementTab() {
 
       // Generate worksheet
       const worksheet = XLSX.utils.json_to_sheet(
-        allData.map((b) => ({
-          Date: b.date,
-          Time: b.time,
-          Name: b.customer?.fullname,
-          Pax: b.totalPax,
-          Status: b.status.replace("_", " "),
-          BookingID: b.bookingCode,
-        }))
+        allData.map((b) => {
+          const dpValues = [
+            Number(b.dp1 || 0),
+            Number(b.dp2 || 0),
+            Number(b.dp3 || 0),
+            Number(b.dp4 || 0),
+            Number(b.dp5 || 0),
+          ];
+
+          const dpDates = [
+            { value: Number(b.dp1 || 0), date: b.dateDp1 },
+            { value: Number(b.dp2 || 0), date: b.dateDp2 },
+            { value: Number(b.dp3 || 0), date: b.dateDp3 },
+            { value: Number(b.dp4 || 0), date: b.dateDp4 },
+            { value: Number(b.dp5 || 0), date: b.dateDp5 },
+          ];
+
+          // 🔥 DP PAID
+          const dpPaid = dpValues.reduce((sum, val) => sum + val, 0);
+
+          // 🔥 LAST DP DATE
+          const lastDp = dpDates
+            .filter((d) => d.value > 0 && d.date)
+            .sort(
+              (a, b) =>
+                new Date(b.date).getTime() - new Date(a.date).getTime()
+            )[0];
+
+          const lastDpDate = lastDp?.date
+            ? new Date(lastDp.date).toISOString().split("T")[0]
+            : "-";
+
+          return {
+            "Tanggal Acara": b.date,
+            Time: b.time,
+            Name: b.customer?.fullname,
+            Phone: b.customer?.phone,
+            Pax: b.totalPax,
+            Status: b.status.replace("_", " "),
+            BookingCode: b.bookingCode,
+
+            TotalDP: Number(b.totalDp || 0),
+
+            // 🔥 tambahan baru
+            DPPaid: dpPaid,
+            LastDPDate: lastDpDate,
+            StatusDP: b.statusDp?.replace("_", " ") || "-", // 🔥 ini yang ditambah
+          };
+        })
       );
 
       const workbook = XLSX.utils.book_new();

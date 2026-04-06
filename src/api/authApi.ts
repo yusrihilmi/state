@@ -1,3 +1,5 @@
+import { fetchWithAuth } from "../utils/fetchWithAuth";
+
 export interface RegisterPayload {
   username: string;
   password: string;
@@ -14,28 +16,13 @@ export interface ResetPasswordAdminPayload {
 export const resetPasswordAdminApi = async (
   payload: ResetPasswordAdminPayload
 ) => {
-  const basicAuth = btoa(
-    `${import.meta.env.VITE_BASIC_USERNAME}:${import.meta.env.VITE_BASIC_PASSWORD}`
-  );
-
-  const res = await fetch(
+  return fetchWithAuth<any>(
     `${import.meta.env.VITE_API_BASE_URL}/auth/reset-password-admin`,
     {
       method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Basic ${basicAuth}`,
-      },
       body: JSON.stringify(payload),
     }
   );
-
-  if (!res.ok) {
-    const err = await res.json().catch(() => null);
-    throw new Error(err?.message || "Reset password admin failed");
-  }
-
-  return res.json();
 };
 
 export const registerApi = async (payload: RegisterPayload) => {

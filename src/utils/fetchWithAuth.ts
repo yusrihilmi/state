@@ -28,7 +28,7 @@ export const fetchWithAuth = async <T>(
   try {
     res = await fetch(input, authInit);
   } catch {
-    throw new Error("Image size is too large. Please upload smaller images.");
+    throw new Error("Network Error");
   }
 
   // 🔁 refresh token

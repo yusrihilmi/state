@@ -28,9 +28,14 @@ export default function MenuCategoryModal({ open, data, onClose }: any) {
       await createMenuCategory({ name });
     }
 
+    setName(""); // 🔥 reset
     onClose();
   };
 
+  const handleClose = () => {
+    setName(""); // 🔥 reset
+    onClose();
+  };
   return (
     <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50">
       <div className="bg-white w-[400px] rounded-lg p-5">
@@ -49,7 +54,7 @@ export default function MenuCategoryModal({ open, data, onClose }: any) {
         />
 
         <div className="flex justify-end gap-2 mt-5">
-          <button onClick={onClose} className="px-4 py-2 text-sm">
+          <button onClick={handleClose} className="px-4 py-2 text-sm">
             Cancel
           </button>
           <button
