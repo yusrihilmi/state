@@ -104,8 +104,15 @@ export default function UserReservationPage() {
 
     useEffect(() => {
         if (!selectedDate || time === null || !selectedTableCategory) return;
+        const formatDateLocal = (date: Date) => {
+            const year = date.getFullYear();
+            const month = String(date.getMonth() + 1).padStart(2, "0");
+            const day = String(date.getDate()).padStart(2, "0");
 
-        const formattedDate = selectedDate.toISOString().split("T")[0];
+            return `${year}-${month}-${day}`;
+        };
+
+        const formattedDate = formatDateLocal(selectedDate);
         const formattedTime = formatTime24(time);
 
         fetchTableAvailability(
@@ -175,7 +182,7 @@ export default function UserReservationPage() {
         return gaps;
     }, [decimalSlots]);
 
-    
+
     const tableState = useMemo(() => {
         if (!tableAvailability.length) return "empty";
 
@@ -729,7 +736,7 @@ export default function UserReservationPage() {
                                         {item.closeOut && !item.available && "Closest Available Time"}
                                     </p>
 
-                                    
+
                                     <p>
                                         {!item.closeOut && !item.available && "Closest Available Time"}
                                     </p>
