@@ -13,6 +13,7 @@ export default function RolesModal({ open, data, onClose }: any) {
   const [roleDefault, setRoleDefault] = useState<number>(0);
   const [menus, setMenus] = useState<any[]>([]);
   const [isEdit, setIsEdit] = useState(false);
+  const [hasChangedRole, setHasChangedRole] = useState(false);
 
   /* ================= INIT ================= */
   useEffect(() => {
@@ -24,8 +25,9 @@ export default function RolesModal({ open, data, onClose }: any) {
     if (!open) return;
 
     if (data) {
-      // 🔥 EDIT MODE
       setIsEdit(true);
+      setHasChangedRole(false); // 🔥 reset
+
       setName(data.name || "");
       setRoleDefault(data.roleIdDefault || 0);
 
@@ -39,20 +41,21 @@ export default function RolesModal({ open, data, onClose }: any) {
 
       setMenus(mappedMenus);
     } else {
-      // 🔥 CREATE MODE
       setIsEdit(false);
       setName("");
       setRoleDefault(0);
       setMenus([]);
+      setHasChangedRole(false);
     }
   }, [open, data]);
 
   /* ================= APPLY DEFAULT ROLE ================= */
   useEffect(() => {
-    // ❗ jangan override kalau edit
-    if (isEdit) return;
     if (!roleDefault) return;
     if (!defaults.length) return;
+
+    // ❗ kalau edit & belum pernah ganti → pakai data lama
+    if (isEdit && !hasChangedRole) return;
 
     const selectedRole = defaults.find((d) => d.id === roleDefault);
     if (!selectedRole) return;
@@ -66,7 +69,7 @@ export default function RolesModal({ open, data, onClose }: any) {
     }));
 
     setMenus(mappedMenus);
-  }, [roleDefault, defaults, isEdit]);
+  }, [roleDefault, defaults, isEdit, hasChangedRole]);
 
   if (!open) return null;
 
@@ -79,11 +82,11 @@ export default function RolesModal({ open, data, onClose }: any) {
       prev.map((m) =>
         m.menuId === menuId
           ? {
-              ...m,
-              viewOnly: type === "viewOnly",
-              viewEdit: type === "viewEdit",
-              noAccess: type === "noAccess",
-            }
+            ...m,
+            viewOnly: type === "viewOnly",
+            viewEdit: type === "viewEdit",
+            noAccess: type === "noAccess",
+          }
           : m
       )
     );
@@ -140,7 +143,13 @@ export default function RolesModal({ open, data, onClose }: any) {
             <select
               value={roleDefault}
               onChange={(e) => {
-                setRoleDefault(Number(e.target.value));
+                const newValue = Number(e.target.value);
+
+                if (isEdit) {
+                  setHasChangedRole(true); // 🔥 begitu berubah sekali
+                }
+
+                setRoleDefault(newValue);
               }}
               className="w-full border rounded px-3 py-2 text-sm"
             >
