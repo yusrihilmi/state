@@ -34,6 +34,7 @@ export default function RolesModal({ open, data, onClose }: any) {
       const mappedMenus = data.menuRoles.map((m: any) => ({
         menuId: m.menuId,
         name: m.menu.name,
+        parentMenuId: m.menu.parentMenuId || null, // 🔥 tambah
         viewOnly: m.viewOnly,
         viewEdit: m.viewEdit,
         noAccess: m.noAccess,
@@ -63,6 +64,7 @@ export default function RolesModal({ open, data, onClose }: any) {
     const mappedMenus = selectedRole.menuRoles.map((m: any) => ({
       menuId: m.menuId,
       name: m.menu.name,
+      parentMenuId: m.menu.parentMenuId || null, // 🔥 tambah ini
       viewOnly: m.viewOnly,
       viewEdit: m.viewEdit,
       noAccess: m.noAccess,
@@ -114,6 +116,11 @@ export default function RolesModal({ open, data, onClose }: any) {
     }
 
     onClose();
+  };
+
+  const getIndent = (menu: any) => {
+    if (!menu.parentMenuId) return 0;
+    return 20; // px indent
   };
 
   return (
@@ -177,7 +184,11 @@ export default function RolesModal({ open, data, onClose }: any) {
             <tbody>
               {menus.map((m) => (
                 <tr key={m.menuId} className="border-t">
-                  <td className="p-2">{m.name}</td>
+                  <td className="p-2">
+                    <div style={{ paddingLeft: `${getIndent(m)}px` }}>
+                      {m.name}
+                    </div>
+                  </td>
 
                   <td className="text-center">
                     <input
