@@ -132,7 +132,7 @@ export default function UserReservationConfirmationPage() {
         <div className="relative h-screen font-montserrat text-white overflow-hidden">
 
             {/* BACKGROUND */}
-            <img src={bgImage} className="absolute inset-0 w-full h-full object-cover" />
+            <img src={data.backgroundImage || bgImage} className="absolute inset-0 w-full h-full object-cover" />
             <div className="absolute inset-0 bg-black/70" />
 
             <div className="relative z-10 max-w-md w-full md:w-[28rem] md:justify-self-center">

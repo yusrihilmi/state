@@ -211,6 +211,7 @@ export interface TableAvailabilityItem {
   available: boolean;
   availablePax: number;
   alternativeText: string;
+  waitingListCount: number;
 }
 
 export interface TableAvailabilityResponse {

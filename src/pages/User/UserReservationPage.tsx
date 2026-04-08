@@ -422,7 +422,7 @@ export default function UserReservationPage() {
 
             {/* BACKGROUND */}
             <img
-                src={bgImage}
+                src={data.backgroundImage || bgImage}
                 className="absolute inset-0 w-full h-full object-cover object-center"
             />
             <div className="absolute inset-0 bg-black/70" />
@@ -735,7 +735,14 @@ export default function UserReservationPage() {
                                     <p>
                                         {item.closeOut && !item.available && "Closest Available Time"}
                                     </p>
-
+                                    <br></br>
+                                    <p>
+                                        {!item.closeOut && !item.available && (
+                                            <>
+                                                Queue Status: There is currently <b>{item.waitingListCount}</b> person ahead of you.
+                                            </>
+                                        )}
+                                    </p>
 
                                     <p>
                                         {!item.closeOut && !item.available && "Closest Available Time"}
