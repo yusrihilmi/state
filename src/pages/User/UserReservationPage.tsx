@@ -735,8 +735,7 @@ export default function UserReservationPage() {
                                     <p>
                                         {item.closeOut && !item.available && "Closest Available Time"}
                                     </p>
-                                    <br></br>
-                                    <p>
+                                    <p className="my-4">
                                         {!item.closeOut && !item.available && (
                                             <>
                                                 Queue Status: There is currently <b>{item.waitingListCount}</b> person ahead of you.
