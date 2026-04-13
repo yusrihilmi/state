@@ -605,16 +605,16 @@ const buildDpFormData = () => {
                   {data?.needDp === true && (
                     <label><b>This booking is DP required</b></label>
                   )}
-                  {/* <label>News Today</label>
+                  {/* <label>News Today</label> */}
                   <textarea
                     disabled
-                    className="!bg-gray-200 mt-2 cursor-not-allowed min-h-[112px] max-h-[112px]"
+                    className="!bg-gray-200 mt-2 hidden cursor-not-allowed min-h-[112px] max-h-[112px]"
                     value={
                       newsLoading
                         ? "Loading news..."
                         : newsToday?.newsToday || ""
                     }
-                  /> */}
+                  />
 
                 </div>
 
@@ -624,7 +624,7 @@ const buildDpFormData = () => {
                 <div className="w-2/3">
 
                   <div className="grid grid-cols-2 gap-4 text-sm mb-2">
-                    {/* <div className="flex flex-col">
+                    <div className="hidden flex-col">
                       <div className="flex flex-col relative">
                         <label>Name</label>
                         <div ref={dropdownRef} className="relative w-full">
@@ -644,6 +644,7 @@ const buildDpFormData = () => {
                               }));
                             }}
                           />
+                          {/* DROPDOWN */}
                           {showCustomerDropdown &&
                             customerSearch &&
                             customers?.length > 0 && (
@@ -671,7 +672,7 @@ const buildDpFormData = () => {
                       </div>
 
                     </div>
-                    <div className="flex flex-col">
+                    <div className="hidden flex-col">
                       <label htmlFor="">Phone</label>
                       <input
                         disabled={!canEditTime}
@@ -686,7 +687,7 @@ const buildDpFormData = () => {
                       />
 
                     </div>
-                    <div className="flex flex-col">
+                    <div className="hidden flex-col">
                       <label htmlFor="">Email</label>
                       <input
                         disabled={!canEditTime}
@@ -700,7 +701,7 @@ const buildDpFormData = () => {
                         }
                       />
                     </div>
-                    <div className="flex flex-col">
+                    <div className="hidden flex-col">
                       <label htmlFor="">Instagram</label>
                       <input
                         disabled={!canEditTime}
@@ -713,7 +714,7 @@ const buildDpFormData = () => {
                           }))
                         }
                       />
-                    </div> */}
+                    </div>
                     <div className="flex flex-col">
                       <label htmlFor="">Date</label>
                       <input
@@ -726,7 +727,7 @@ const buildDpFormData = () => {
                           setForm((prev) => ({
                             ...prev,
                             date: newDate,
-                            time: "",
+                            time: "", // 🔥 reset time kalau ganti tanggal
                           }));
                         }}
                         className={`input ${!canEditTime ? "!bg-gray-100 cursor-not-allowed" : ""}`}
