@@ -643,7 +643,7 @@ export default function BookingManagementModal({ open, data, onClose }: any) {
 
 
                 <div className="flex flex-col w-1/2 text-sm">
-                  {data.needDp && (
+                  {data?.needDp === true && (
                     <label><b>This booking is DP required</b></label>
                   )}
                   <label>News Today</label>
