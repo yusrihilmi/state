@@ -6,7 +6,8 @@ import {
   createBookingApi,
   updateBookingApi,
   deleteBookingApi,
-  updateBookingDpApi
+  updateBookingDpApi,
+  cancelBookingDpApi
 } from "../api/bookingApi";
 import type { Booking } from "../api/bookingApi";
 
@@ -41,6 +42,7 @@ interface BookingState {
   setFilters: (filters: Partial<BookingFilters>) => void;
   resetFilters: () => void;
   updateBookingDp: (id: number, formData: FormData) => Promise<void>;
+  cancelBookingDp: (id: number) => Promise<void>;
   fetchBookings: (page?: number, limit?: number) => Promise<void>;
   createBooking: (formData: FormData) => Promise<void>;
   updateBooking: (id: number, formData: FormData) => Promise<void>;
@@ -64,6 +66,18 @@ export const useBookingStore = create<BookingState>((set, get) => ({
       filters: {},
       page: 1,
     }),
+
+  cancelBookingDp: async (id) => {
+    try {
+      await cancelBookingDpApi(id);
+      toast.success("DP updated");
+
+      const { page, limit } = get();
+      get().fetchBookings(page, limit); // refresh data
+    } catch (err: any) {
+      toast.error(err?.message || "Failed to update DP");
+    }
+  },
 
   updateBookingDp: async (id, formData) => {
     try {

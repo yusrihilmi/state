@@ -30,37 +30,39 @@ export default function UserReservationCustomerPage() {
   }, []);
 
   useEffect(() => {
-  const customerRaw = localStorage.getItem("customer-data");
-  const step4Raw = localStorage.getItem("reservation_step_4");
+    const customerRaw = localStorage.getItem("customer-data");
+    const step4Raw = localStorage.getItem("reservation_step_4");
 
-  try {
-    if (customerRaw) {
-      const customer = JSON.parse(customerRaw);
+    try {
+      if (customerRaw) {
+        const customer = JSON.parse(customerRaw);
 
-      setForm({
-        customerName: customer.customerName || "",
-        customerPhone: customer.customerPhone || "",
-        customerEmail: customer.customerEmail || "",
-        customerInstagram: customer.customerInstagram || "",
-      });
+        setForm({
+          customerName: customer.customerName || "",
+          customerPhone: customer.customerPhone || "",
+          customerEmail: customer.customerEmail || "",
+          customerInstagram: customer.customerInstagram || "",
+        });
 
-      return; // ✅ stop kalau customer-data ada
+        return; // ✅ stop kalau customer-data ada
+      }
+
+      if (step4Raw) {
+        const step4 = JSON.parse(step4Raw);
+
+        setForm({
+          customerName: step4.customerName || "",
+          customerPhone: step4.customerPhone || "",
+          customerEmail: step4.customerEmail || "",
+          customerInstagram: step4.customerInstagram || "",
+        });
+      }
+    } catch (err) {
+      console.error("Failed to parse localStorage", err);
     }
+  }, []);
 
-    if (step4Raw) {
-      const step4 = JSON.parse(step4Raw);
-
-      setForm({
-        customerName: step4.customerName || "",
-        customerPhone: step4.customerPhone || "",
-        customerEmail: step4.customerEmail || "",
-        customerInstagram: step4.customerInstagram || "",
-      });
-    }
-  } catch (err) {
-    console.error("Failed to parse localStorage", err);
-  }
-}, []);
+  const phoneValid = /^[0-9]{10,}$/.test(form.customerPhone);
 
 
   const customerEmailValid =
@@ -68,7 +70,7 @@ export default function UserReservationCustomerPage() {
 
   const isFormValid =
     form.customerName.trim() !== "" &&
-    form.customerPhone.trim() !== "" &&
+    phoneValid &&
     customerEmailValid;
 
   if (!data) return null;
@@ -167,6 +169,12 @@ export default function UserReservationCustomerPage() {
                 placeholder="08xxxx"
                 className="w-full mt-1 px-4 py-3 rounded-lg bg-white text-black outline-none"
               />
+
+              {!phoneValid && form.customerPhone.length > 0 && (
+                <p className="text-red-400 text-xs mt-1">
+                  Phone number must be valid (minimum 10 digits)
+                </p>
+              )}
             </div>
 
             <div>

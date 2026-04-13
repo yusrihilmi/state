@@ -45,6 +45,7 @@ export default function BookingManagementModal({ open, data, onClose }: any) {
   ]);
   const [isDpLocked, setIsDpLocked] = useState(false);
   const [confirmModalOpen, setConfirmModalOpen] = useState(false);
+  const [cancelModalOpen, setCancelModalOpen] = useState(false);
 
   const [isDpCompleted, setIsDpCompleted] = useState(false);
 
@@ -115,7 +116,7 @@ export default function BookingManagementModal({ open, data, onClose }: any) {
     clearCustomer,
   } = useCustomerStore();
 
-  const { createBooking, updateBooking, updateBookingDp } = useBookingStore();
+  const { createBooking, updateBooking, updateBookingDp, cancelBookingDp } = useBookingStore();
   const {
     availableTimeSlots,
     fetchAvailableTimeSlots,
@@ -325,14 +326,14 @@ export default function BookingManagementModal({ open, data, onClose }: any) {
 
       const menus = data?.bookingMenus || [];
 
-      const mappedMenus = menus.map((bm: any) => ({
-        id: bm.menu.id,
-        name: bm.menu.name,
-        price: bm.menu.price,
-        photo: bm.menu.photo,
-        description: bm.menu.description,
-        qty: bm.qty, // 🔥 pakai qty dari API
-      }));
+      const mappedMenus = menus?.map((bm: any) => ({
+        id: bm.menu?.id ?? null,
+        name: bm.menu?.name ?? "-",
+        price: bm.menu?.price ?? 0,
+        photo: bm.menu?.photo ?? "",
+        description: bm.menu?.description ?? "",
+        qty: bm.qty ?? 0,
+      })) || [];
 
       // ===============================
       // 🔥 MAPPING DP
@@ -1288,6 +1289,23 @@ export default function BookingManagementModal({ open, data, onClose }: any) {
                 >
                   {isDpLocked ? "Updated" : "Update DP Status"}
                 </button>
+                <button
+                  type="button"
+                  disabled={!canSaveDp || !isDpLocked}
+                  onClick={() => {
+                    if (!canSaveDp || !isDpLocked) return;
+                    setCancelModalOpen(true); // 🔥 buka modal
+                  }}
+                  className={`
+    px-3 py-1 text-sm text-white rounded
+    ${!canSaveDp || !isDpLocked
+                      ? "bg-gray-400 cursor-not-allowed"
+                      : "bg-primary hover:bg-primary/80"
+                    }
+  `}
+                >
+                  {isDpLocked ? "Cancel" : "Cancel"}
+                </button>
               </div>
             </div>
           )}
@@ -1340,6 +1358,51 @@ export default function BookingManagementModal({ open, data, onClose }: any) {
           </div>
         )}
 
+        {cancelModalOpen && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
+            <div className="bg-white rounded-xl p-6 w-[350px] shadow-lg">
+
+              <h2 className="text-lg font-semibold mb-2">
+                Cancel Update
+              </h2>
+
+              <p className="text-sm text-gray-600 mb-6">
+                Are you sure you want to cancel DP status?
+              </p>
+
+              <div className="flex justify-end gap-3">
+                <button
+                  onClick={() => setCancelModalOpen(false)}
+                  className="px-4 py-2 bg-gray-200 rounded"
+                >
+                  Cancel
+                </button>
+
+                <button
+                  onClick={async () => {
+                    try {
+                      if (!detail?.id) return;
+
+
+                      await cancelBookingDp(detail.id);
+                      if (isDpCompleted) {
+                        setIsDpLocked(false);
+                      }
+
+                      setCancelModalOpen(false);
+                    } catch (err) {
+                      console.error(err);
+                    }
+                  }}
+                  className="px-4 py-2 bg-primary text-white rounded"
+                >
+                  Confirm
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
 
         <div className="flex items-end">
 
@@ -1363,7 +1426,7 @@ export default function BookingManagementModal({ open, data, onClose }: any) {
                     }}
                     className={`px-4 py-1 rounded-md text-sm
         ${status === s.value
-                        ? "bg-[#a38f63] text-white"
+                        ? "bg-[var(--color-primary)] text-white"
                         : "bg-white border"}
         ${disabledCompleted ? "opacity-50 cursor-not-allowed" : ""}
       `}

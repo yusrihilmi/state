@@ -115,6 +115,16 @@ export default function Header() {
         {open && (
           <div className="absolute right-0 mt-2 w-48 bg-white border border-gray-200 rounded-md shadow-lg">
 
+            <div className="flex flex-col gap-2 px-4 py-2">
+              <p>
+                {user?.fullName}
+              </p>
+              <p>
+                {user?.username}
+              </p>
+
+            </div>
+
             {/* Change Password (role === 1) */}
             {user?.roleId === 1 && (
               <button

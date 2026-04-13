@@ -102,7 +102,7 @@ export default function CustomerDataBookingModal({ open, data, onClose }: any) {
     clearCustomer,
   } = useCustomerStore();
 
-  const { createBooking, updateBooking, updateBookingDp  } = useBookingStore();
+  const { createBooking, updateBooking, updateBookingDp } = useBookingStore();
   const {
     availableTimeSlots,
     fetchAvailableTimeSlots,
@@ -147,27 +147,27 @@ export default function CustomerDataBookingModal({ open, data, onClose }: any) {
   }, [customerSearch, customer?.id]);
 
 
-const buildDpFormData = () => {
-  const formData = new FormData();
+  const buildDpFormData = () => {
+    const formData = new FormData();
 
-  dpAmounts.forEach((dp, index) => {
-    formData.append(`dp_${index + 1}`, dp.amount || "0");
+    dpAmounts.forEach((dp, index) => {
+      formData.append(`dp_${index + 1}`, dp.amount || "0");
 
-    formData.append(
-      `date_dp_${index + 1}`,
-      dp.date ? new Date(dp.date).toISOString() : ""
-    );
-  });
+      formData.append(
+        `date_dp_${index + 1}`,
+        dp.date ? new Date(dp.date).toISOString() : ""
+      );
+    });
 
-  // 🔥 status: 1 = completed, 0 = belum
-  formData.append("status", isDpCompleted ? "1" : "0");
+    // 🔥 status: 1 = completed, 0 = belum
+    formData.append("status", isDpCompleted ? "1" : "0");
 
-  if (dpFile) {
-    formData.append("downpayment_proof", dpFile);
-  }
+    if (dpFile) {
+      formData.append("downpayment_proof", dpFile);
+    }
 
-  return formData;
-};
+    return formData;
+  };
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -312,14 +312,14 @@ const buildDpFormData = () => {
 
       const menus = data?.bookingMenus || [];
 
-      const mappedMenus = menus.map((bm: any) => ({
-        id: bm.menu.id,
-        name: bm.menu.name,
-        price: bm.menu.price,
-        photo: bm.menu.photo,
-        description: bm.menu.description,
-        qty: bm.qty, // 🔥 pakai qty dari API
-      }));
+      const mappedMenus = menus?.map((bm: any) => ({
+        id: bm.menu?.id ?? null,
+        name: bm.menu?.name ?? "-",
+        price: bm.menu?.price ?? 0,
+        photo: bm.menu?.photo ?? "",
+        description: bm.menu?.description ?? "",
+        qty: bm.qty ?? 0,
+      })) || [];
 
       // ===============================
       // 🔥 MAPPING DP
@@ -1216,7 +1216,7 @@ const buildDpFormData = () => {
                 {/* RIGHT: BUTTON */}
                 <button
                   type="button"
-                  disabled={!canSaveDp || isDpLocked} 
+                  disabled={!canSaveDp || isDpLocked}
                   onClick={() => {
                     if (!canSaveDp || isDpLocked) return;
                     setConfirmModalOpen(true); // 🔥 buka modal

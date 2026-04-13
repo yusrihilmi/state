@@ -87,6 +87,18 @@ export interface BookingFilterParams {
 
 /* ================= API ================= */
 
+// ================= CANCEL DP =================
+export const cancelBookingDpApi = async (
+  id: number,
+): Promise<BookingSingleResponse> => {
+  return fetchWithAuth<BookingSingleResponse>(
+    `${import.meta.env.VITE_API_BASE_URL}/booking/cancel-dp/${id}`,
+    {
+      method: "PATCH", 
+    }
+  );
+};
+
 // ================= UPDATE DP =================
 export const updateBookingDpApi = async (
   id: number,

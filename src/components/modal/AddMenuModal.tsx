@@ -93,8 +93,8 @@ const formatRupiah = (value: string | number) => {
               onClick={() => setActiveCategoryId(c.id)}
               className={`px-4 py-1 rounded-full border text-sm
                 ${activeCategoryId === c.id
-                  ? "bg-[#a38f63] text-white"
-                  : "border-[#a38f63] text-[#a38f63]"
+                  ? "bg-[var(--color-primary)] text-white"
+                  : "border-[var(--color-primary)] text-[var(--color-primary)]"
                 }`}
             >
               {c.name}
@@ -110,7 +110,7 @@ const formatRupiah = (value: string | number) => {
             return (
               <div
                 key={menu.id}
-                className="bg-[#a38f63] rounded-xl p-3 text-white"
+                className="bg-[var(--color-primary)] rounded-xl p-3 text-white"
               >
                 <img
                   src={
@@ -175,7 +175,7 @@ const formatRupiah = (value: string | number) => {
               onSave(selected);
               onClose();
             }}
-            className="px-5 py-2 bg-[#a38f63] text-white rounded-md"
+            className="px-5 py-2 bg-[var(--color-primary)] text-white rounded-md"
           >
             Save
           </button>
