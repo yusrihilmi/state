@@ -167,7 +167,7 @@ function Custom3Layout({
                 setSelectedPromo={setSelectedPromo}
             />
             <div className="px-6">
-                {data.status === "OPEN" && isOpenNow ? (
+                {/* {data.status === "OPEN" && isOpenNow ? (
                     <Link
                         to="/state/reservation/step-1"
                         className="block w-full py-3 rounded-md font-semibold text-white hover:text-white text-center"
@@ -179,7 +179,14 @@ function Custom3Layout({
                     <div className="block w-full py-3 rounded-md font-semibold text-white text-center bg-gray-400 cursor-not-allowed">
                         Closed ({data.openHours} - {data.closedHours})
                     </div>
-                )}  
+                )} */}
+                <Link
+                    to="/state/reservation/step-1"
+                    className="block w-full py-3 rounded-md font-semibold text-white hover:text-white text-center"
+                    style={{ background: "var(--color-primary)" }}
+                >
+                    Make Reservation Here
+                </Link> 
                 <Link
                     to="/state/reservation/search"
                     className="block w-full mt-4 py-3 rounded-md font-semibold text-white hover:text-white text-center bg-transparent underline"
@@ -277,7 +284,7 @@ function Custom2Layout({
 
             {/* CTA */}
             <div className="px-6 pb-24">
-                {data.status === "OPEN" && isOpenNow ? (
+                {/* {data.status === "OPEN" && isOpenNow ? (
                     <Link
                         to="/state/reservation/step-1"
                         className="block w-full py-3 rounded-md font-semibold text-white hover:text-white text-center"
@@ -289,7 +296,14 @@ function Custom2Layout({
                     <div className="block w-full py-3 rounded-md font-semibold text-white text-center bg-gray-400 cursor-not-allowed">
                         Closed ({data.openHours} - {data.closedHours})
                     </div>
-                )}
+                )} */}
+                <Link
+                    to="/state/reservation/step-1"
+                    className="block w-full py-3 rounded-md font-semibold text-white hover:text-white text-center"
+                    style={{ background: "var(--color-primary)" }}
+                >
+                    Make Reservation Here
+                </Link>
                 <Link
                     to="/state/reservation/search"
                     className="block w-full mt-4 py-3 rounded-md font-semibold text-white hover:text-white text-center bg-transparent underline"
@@ -421,7 +435,7 @@ function DefaultLayout({
 
             {/* CTA */}
             <div className="px-6 mt-6">
-                {data.status === "OPEN" && isOpenNow ? (
+                {/* {data.status === "OPEN" && isOpenNow ? (
                     <Link
                         to="/state/reservation/step-1"
                         className="block w-full py-3 rounded-md font-semibold text-white hover:text-white text-center"
@@ -433,7 +447,14 @@ function DefaultLayout({
                     <div className="block w-full py-3 rounded-md font-semibold text-white text-center bg-gray-400 cursor-not-allowed">
                         Closed ({data.openHours} - {data.closedHours})
                     </div>
-                )}
+                )} */}
+                <Link
+                    to="/state/reservation/step-1"
+                    className="block w-full py-3 rounded-md font-semibold text-white hover:text-white text-center"
+                    style={{ background: "var(--color-primary)" }}
+                >
+                    Make Reservation Here
+                </Link>
 
                 <Link
                     to="/state/reservation/search"
