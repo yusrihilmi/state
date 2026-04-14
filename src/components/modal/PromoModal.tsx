@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { usePromotionStore } from "../../stores/usePromotionStore";
+import { toast } from "react-toastify";
 
 export default function PromoModal({ open, data, onClose }: any) {
   const { createPromotion, updatePromotion } = usePromotionStore();
@@ -42,6 +43,16 @@ export default function PromoModal({ open, data, onClose }: any) {
   const handleSave = async () => {
     if (!title || !fromDate || !toDate) return;
 
+    // ✅ Validasi ukuran file max 2MB
+    if (photoFile) {
+      const maxSize = 2 * 1024 * 1024; // 2MB
+
+      if (photoFile.size > maxSize) {
+        toast.error("Ukuran file maksimal 2 MB");
+        return;
+      }
+    }
+
     const payload = {
       title,
       description,
@@ -50,14 +61,20 @@ export default function PromoModal({ open, data, onClose }: any) {
       photo: photoFile,
     };
 
-    if (data?.id) {
-      await updatePromotion(data.id, payload);
-    } else {
-      await createPromotion(payload);
-    }
+    try {
+      if (data?.id) {
+        await updatePromotion(data.id, payload);
+        toast.success("Promotion berhasil diupdate");
+      } else {
+        await createPromotion(payload);
+        toast.success("Promotion berhasil dibuat");
+      }
 
-    onClose();
-    resetForm();
+      onClose();
+      resetForm();
+    } catch (error) {
+      toast.error("Terjadi kesalahan saat menyimpan data");
+    }
   };
 
   return (
@@ -78,8 +95,8 @@ export default function PromoModal({ open, data, onClose }: any) {
                     src={preview}
                     className="w-full h-full object-cover"
                     onError={(e) =>
-                      ((e.target as HTMLImageElement).src =
-                        "https://dummyimage.com/200x200/ddd/999")
+                    ((e.target as HTMLImageElement).src =
+                      "https://dummyimage.com/200x200/ddd/999")
                     }
                   />
                 ) : (
@@ -113,6 +130,8 @@ export default function PromoModal({ open, data, onClose }: any) {
                   }}
                 />
               </label>
+
+              <p className="text-sm py-2 italic">*Max upload size 2mb</p>
             </div>
           </div>
 

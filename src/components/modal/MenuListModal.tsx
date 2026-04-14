@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { useMenuStore } from "../../stores/useMenuStore";
 import { useMenuCategoryStore } from "../../stores/useMenuCategoryStore";
+import { toast } from "react-toastify";
 
 export default function MenuListModal({ open, data, onClose }: any) {
   const [photoFile, setPhotoFile] = useState<File | null>(null);
@@ -53,7 +54,20 @@ export default function MenuListModal({ open, data, onClose }: any) {
   if (!open) return null;
 
   const handleSave = async () => {
-    if (!name || !categoryId || !price) return;
+    if (!name || !categoryId || !price) {
+      toast.error("Nama, kategori, dan harga wajib diisi");
+      return;
+    }
+
+    // ✅ Validasi ukuran file (max 2MB)
+    if (photoFile) {
+      const maxSize = 2 * 1024 * 1024; // 2MB
+
+      if (photoFile.size > maxSize) {
+        toast.error("Ukuran file maksimal 2 MB");
+        return;
+      }
+    }
 
     const formData = new FormData();
     formData.append("name", name);
@@ -62,19 +76,24 @@ export default function MenuListModal({ open, data, onClose }: any) {
     formData.append("categoryId", String(categoryId));
     formData.append("isActive", String(isActive));
 
-
     if (photoFile) {
       formData.append("photo", photoFile);
     }
 
-    if (data) {
-      await updateMenu(data.id, formData);
-    } else {
-      await createMenu(formData);
-    }
+    try {
+      if (data) {
+        await updateMenu(data.id, formData);
+        toast.success("Menu berhasil diupdate");
+      } else {
+        await createMenu(formData);
+        toast.success("Menu berhasil dibuat");
+      }
 
-    onClose();
-    resetForm();
+      onClose();
+      resetForm();
+    } catch (error) {
+      toast.error("Terjadi kesalahan saat menyimpan menu");
+    }
   };
 
   return (
@@ -130,6 +149,7 @@ export default function MenuListModal({ open, data, onClose }: any) {
                   }}
                 />
               </label>
+              <p className="text-sm py-2 italic">*Max upload size 2mb</p>
             </div>
           </div>
 

@@ -7,6 +7,8 @@ import { useCustomerStore } from "../../stores/useCustomerStore";
 import { useBookingStore } from "../../stores/useBookingStore";
 import { useReservationStore } from "../../stores/useReservationStore";
 import { useNewsTodayStore } from "../../stores/useNewsTodayStore";
+import { toast } from "react-toastify";
+
 
 
 
@@ -1193,6 +1195,7 @@ export default function BookingManagementModal({ open, data, onClose }: any) {
                   >
                     Upload
                   </button>
+                  <p className="text-sm text-end italic">*Max upload size 2mb</p>
 
                   <input
                     ref={fileInputRef}
@@ -1200,11 +1203,23 @@ export default function BookingManagementModal({ open, data, onClose }: any) {
                     accept="image/*"
                     className="hidden"
                     onChange={(e) => {
-                      if (e.target.files?.[0]) {
-                        const file = e.target.files[0];
-                        setDpFile(file);
-                        setPreviewUrl(URL.createObjectURL(file));
+                      const file = e.target.files?.[0];
+                      if (!file) return;
+
+                      const maxSize = 2 * 1024 * 1024; // 2MB
+
+                      // ❌ Kalau lebih dari 2MB
+                      if (file.size > maxSize) {
+                        toast.error("Ukuran file maksimal 2 MB");
+
+                        // reset input biar bisa upload ulang file yang sama
+                        e.target.value = "";
+                        return;
                       }
+
+                      // ✅ kalau valid
+                      setDpFile(file);
+                      setPreviewUrl(URL.createObjectURL(file));
                     }}
                   />
                 </div>
