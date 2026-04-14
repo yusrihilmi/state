@@ -76,7 +76,7 @@ export default function Sidebar() {
         <aside
             className={`
         min-h-screen bg-[#F3F3F3] border-r border-gray-200
-        transition-all duration-300
+        transition-all duration-300 overflow-auto
         ${collapsed ? "w-20" : "w-72"}
       `}
         >

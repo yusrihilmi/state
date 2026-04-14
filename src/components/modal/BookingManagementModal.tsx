@@ -166,8 +166,13 @@ export default function BookingManagementModal({ open, data, onClose }: any) {
   const buildDpFormData = () => {
     const formData = new FormData();
 
+    const parseNumber = (value: string | number) => {
+      if (!value) return "0";
+      return value.toString().replace(/\./g, ""); // hapus titik ribuan
+    };
+
     dpAmounts.forEach((dp, index) => {
-      formData.append(`dp_${index + 1}`, dp.amount || "0");
+      formData.append(`dp_${index + 1}`, parseNumber(dp.amount));
 
       formData.append(
         `date_dp_${index + 1}`,
@@ -584,13 +589,12 @@ export default function BookingManagementModal({ open, data, onClose }: any) {
   };
 
   const formatNumber = (value: string | number) => {
-    if (!value) return "";
+    if (!value && value !== 0) return "";
 
-    const numberString = value.toString().replace(/[^,\d]/g, "");
-    const split = numberString.split(",");
-    const sisa = split[0].length % 3;
-    let result = split[0].substr(0, sisa);
-    const ribuan = split[0].substr(sisa).match(/\d{3}/gi);
+    const numberString = value.toString().replace(/\D/g, ""); // ❗ hanya angka
+    const sisa = numberString.length % 3;
+    let result = numberString.substr(0, sisa);
+    const ribuan = numberString.substr(sisa).match(/\d{3}/g);
 
     if (ribuan) {
       const separator = sisa ? "." : "";
@@ -600,13 +604,18 @@ export default function BookingManagementModal({ open, data, onClose }: any) {
     return result;
   };
 
+  const parseNumber = (value: string | number) => {
+    if (!value) return 0;
+    return Number(value.toString().replace(/\./g, ""));
+  };
+
   const totalPaid = dpAmounts.reduce(
-    (sum, item) => sum + Number(item.amount || 0),
+    (sum, item) => sum + parseNumber(item.amount),
     0
   );
 
   const remainingDp = Math.max(
-    Number(form.totalDp || 0) - totalPaid,
+    parseNumber(form.totalDp) - totalPaid,
     0
   );
 
