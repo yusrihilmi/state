@@ -75,10 +75,11 @@ export default function Sidebar() {
     return (
         <aside
             className={`
-        min-h-screen bg-[#F3F3F3] border-r border-gray-200
-        transition-all duration-300 overflow-auto
-        ${collapsed ? "w-20" : "w-72"}
-      `}
+    h-full flex flex-col
+    bg-[#F3F3F3] border-r border-gray-200
+    transition-all duration-300
+    ${collapsed ? "w-20" : "w-72"}
+  `}
         >
             {/* Toggle */}
             <div className="flex justify-end p-4">
@@ -91,7 +92,7 @@ export default function Sidebar() {
             </div>
 
             {/* Menu */}
-            <nav className="px-3 space-y-2 mt-4">
+            <nav className="px-3 space-y-2 mt-4 overflow-y-auto">
                 {menuItems
                     .filter((item) =>
                         user?.access?.some(
