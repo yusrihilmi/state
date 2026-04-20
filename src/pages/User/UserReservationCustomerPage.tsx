@@ -65,13 +65,12 @@ export default function UserReservationCustomerPage() {
   const phoneValid = /^[0-9]{10,}$/.test(form.customerPhone);
 
 
-  const customerEmailValid =
-    /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.customerEmail);
+  // const customerEmailValid =
+  //   /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.customerEmail);
 
   const isFormValid =
     form.customerName.trim() !== "" &&
-    phoneValid &&
-    customerEmailValid;
+    phoneValid
 
   if (!data) return null;
 

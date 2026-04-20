@@ -476,6 +476,10 @@ export default function BookingManagementModal({ open, data, onClose }: any) {
     return times;
   };
 
+  const totalPrice = orderedMenu.reduce((total, item) => {
+    return total + (item.price || 0) * (item.qty || 0);
+  }, 0);
+
   const timeOptions = generateTimeOptions();
 
 
@@ -1103,6 +1107,12 @@ export default function BookingManagementModal({ open, data, onClose }: any) {
                 </div>
 
                 {/* ADD MENU – STICKY BOTTOM */}
+                <div className="pt-3 mt-3 border-t bg-white sticky bottom-0 flex justify-between font-semibold">
+                  <span>Total</span>
+                  <span>
+                    Rp {totalPrice.toLocaleString("id-ID")}
+                  </span>
+                </div>
                 <div className="pt-3 mt-3 border-t bg-white sticky bottom-0">
                   <button
                     onClick={() => setShowAddMenu(true)}

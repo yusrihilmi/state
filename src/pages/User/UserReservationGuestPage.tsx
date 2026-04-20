@@ -134,7 +134,7 @@ export default function UserReservationGuestPage() {
 
                     {/* ================= GUEST ================= */}
                     <div className="mt-8 px-6">
-                        <p className="text-sm mb-4">How many Guests?</p>
+                        <p className="text-sm mb-4">How many Guests? ( If Take away pls choose 1 Only)</p>
 
                         <div className="grid grid-cols-5 gap-3">
                             {guestOptions.map((num) => {

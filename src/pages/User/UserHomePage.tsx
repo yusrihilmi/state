@@ -173,7 +173,7 @@ function Custom3Layout({
                         className="block w-full py-3 rounded-md font-semibold text-white hover:text-white text-center"
                         style={{ background: "var(--color-primary)" }}
                     >
-                        Make Reservation Here
+                        Make Reservation or Take Away Here
                     </Link>
                 ) : (
                     <div className="block w-full py-3 rounded-md font-semibold text-white text-center bg-gray-400 cursor-not-allowed">
@@ -185,7 +185,7 @@ function Custom3Layout({
                     className="block w-full py-3 rounded-md font-semibold text-white hover:text-white text-center"
                     style={{ background: "var(--color-primary)" }}
                 >
-                    Make Reservation Here
+                    Make Reservation or Take Away Here
                 </Link> 
                 <Link
                     to="/state/reservation/search"
@@ -290,7 +290,7 @@ function Custom2Layout({
                         className="block w-full py-3 rounded-md font-semibold text-white hover:text-white text-center"
                         style={{ background: "var(--color-primary)" }}
                     >
-                        Make Reservation Here
+                        Make Reservation or Take Away Here
                     </Link>
                 ) : (
                     <div className="block w-full py-3 rounded-md font-semibold text-white text-center bg-gray-400 cursor-not-allowed">
@@ -302,7 +302,7 @@ function Custom2Layout({
                     className="block w-full py-3 rounded-md font-semibold text-white hover:text-white text-center"
                     style={{ background: "var(--color-primary)" }}
                 >
-                    Make Reservation Here
+                    Make Reservation or Take Away Here
                 </Link>
                 <Link
                     to="/state/reservation/search"
@@ -441,7 +441,7 @@ function DefaultLayout({
                         className="block w-full py-3 rounded-md font-semibold text-white hover:text-white text-center"
                         style={{ background: "var(--color-primary)" }}
                     >
-                        Make Reservation Here
+                        Make Reservation or Take Away Here
                     </Link>
                 ) : (
                     <div className="block w-full py-3 rounded-md font-semibold text-white text-center bg-gray-400 cursor-not-allowed">
@@ -453,7 +453,7 @@ function DefaultLayout({
                     className="block w-full py-3 rounded-md font-semibold text-white hover:text-white text-center"
                     style={{ background: "var(--color-primary)" }}
                 >
-                    Make Reservation Here
+                    Make Reservation or Take Away Here
                 </Link>
 
                 <Link
